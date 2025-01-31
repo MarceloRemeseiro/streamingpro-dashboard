@@ -6,23 +6,30 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const id = params.id
+  
   try {
     const database = await prisma.databaseInstance.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!database) {
       return NextResponse.json({ error: 'Database not found' }, { status: 404 })
     }
 
-    // Detener y eliminar el contenedor
-    const container = docker.getContainer(database.containerId)
-    await container.stop()
-    await container.remove({ force: true })
+    try {
+      // Intentar eliminar el contenedor Docker si existe
+      const container = docker.getContainer(database.containerId)
+      await container.stop().catch(() => {}) // Ignorar error si ya está detenido
+      await container.remove({ force: true }).catch(() => {}) // Ignorar error si no existe
+    } catch (error) {
+      console.log('Error al eliminar contenedor Docker:', error)
+      // Continuar con la eliminación en la base de datos
+    }
 
-    // Eliminar de la base de datos
+    // Eliminar de la base de datos independientemente del estado del contenedor
     await prisma.databaseInstance.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })

@@ -57,11 +57,11 @@ export default function CreateDatabaseModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Nueva Base de Datos</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Nueva Base de Datos</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
               Tipo de base de datos
             </label>
             <select
@@ -72,11 +72,11 @@ export default function CreateDatabaseModal({
                   dbType: e.target.value as DatabaseType,
                 })
               }
-              className="w-full p-2 border rounded dark:bg-gray-700"
+              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
               required
             >
               {databaseTypes.map((type) => (
-                <option key={type} value={type}>
+                <option key={type} value={type} className="text-gray-900 dark:text-gray-200">
                   {type}
                 </option>
               ))}
@@ -84,20 +84,20 @@ export default function CreateDatabaseModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Nombre</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Nombre</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full p-2 border rounded dark:bg-gray-700"
+              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Subdominio</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Subdominio</label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -105,42 +105,42 @@ export default function CreateDatabaseModal({
                 onChange={(e) =>
                   setFormData({ ...formData, subdomain: e.target.value })
                 }
-                className="w-full p-2 border rounded dark:bg-gray-700"
+                className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                 placeholder="mi-db"
                 required
               />
-              <span className="whitespace-nowrap">.streamingpro.es</span>
+              <span className="whitespace-nowrap text-gray-900 dark:text-gray-200">.streamingpro.es</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Usuario</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Usuario</label>
             <input
               type="text"
               value={formData.username}
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
-              className="w-full p-2 border rounded dark:bg-gray-700"
+              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Contraseña</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Contraseña</label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full p-2 border rounded dark:bg-gray-700"
+              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
               Nombre de la base de datos
             </label>
             <input
@@ -149,7 +149,7 @@ export default function CreateDatabaseModal({
               onChange={(e) =>
                 setFormData({ ...formData, dbName: e.target.value })
               }
-              className="w-full p-2 border rounded dark:bg-gray-700"
+              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
               required
             />
           </div>
@@ -158,7 +158,7 @@ export default function CreateDatabaseModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
+              className="px-4 py-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
             >
               Cancelar
             </button>

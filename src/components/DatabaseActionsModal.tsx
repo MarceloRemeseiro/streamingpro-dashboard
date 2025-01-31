@@ -65,21 +65,21 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-[500px]">
-          <Dialog.Title className="text-lg font-bold mb-4">
+          <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-4">
             Gestionar Base de Datos
           </Dialog.Title>
           
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold mb-2">Conexión Standard:</h3>
-              <pre className="bg-gray-100 dark:bg-gray-900 p-2 rounded text-sm overflow-auto">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Conexión Standard:</h3>
+              <pre className="bg-gray-100 dark:bg-gray-900 p-2 rounded text-sm text-gray-900 dark:text-gray-100 overflow-auto">
                 {database.connectionUrl}
               </pre>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-2">Conexión Prisma:</h3>
-              <pre className="bg-gray-100 dark:bg-gray-900 p-2 rounded text-sm overflow-auto">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Conexión Prisma:</h3>
+              <pre className="bg-gray-100 dark:bg-gray-900 p-2 rounded text-sm text-gray-900 dark:text-gray-100 overflow-auto">
                 {`datasource db {
   provider = "${database.dbType.toLowerCase()}"
   url = "${database.connectionUrl}"
@@ -110,7 +110,7 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
             </div>
           </div>
 
-          <Dialog.Close className="absolute top-4 right-4 text-gray-400 hover:text-gray-500">
+          <Dialog.Close className="absolute top-4 right-4 text-gray-900 dark:text-gray-300 hover:text-gray-500">
             ✕
           </Dialog.Close>
         </Dialog.Content>

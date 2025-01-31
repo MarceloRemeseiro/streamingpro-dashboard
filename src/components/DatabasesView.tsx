@@ -14,7 +14,7 @@ function DatabasesContent() {
   const { data: databases = [], error, isLoading, mutate } = useSWR<DatabaseInstance[]>('/api/databases', fetcher)
   const [selectedDatabase, setSelectedDatabase] = useState<DatabaseInstance | null>(null)
 
-  if (error) return <div className="p-8">Error al cargar las bases de datos</div>
+  if (error) return <div className="p-8 text-gray-900 dark:text-white">Error al cargar las bases de datos</div>
   if (isLoading) return <div className="p-8">Cargando...</div>
 
   const refreshDatabases = async () => {

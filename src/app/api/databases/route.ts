@@ -10,6 +10,8 @@ interface NetworkContainer {
   Id: string;
 }
 
+const DATABASE_DOMAIN = process.env.DATABASE_DOMAIN || 'localhost'
+
 export async function GET() {
   try {
     const databases = await prisma.databaseInstance.findMany({
@@ -145,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     // Configurar proxy con el puerto correcto
     const proxyConfig: ProxyHostConfig = {
-      domain_names: [`${subdomain}.localhost`],
+      domain_names: [`${subdomain}.${DATABASE_DOMAIN}`],
       forward_scheme: 'http',
       forward_host: containerName,
       forward_port: parseInt(containerPort.split('/')[0]), // Extraer solo el número del puerto
@@ -154,15 +156,17 @@ export async function POST(request: NextRequest) {
 
     // Actualizar URL de conexión según el tipo
     const connectionUrl = (() => {
+      const host = `${subdomain}.${DATABASE_DOMAIN}`
+      
       switch (dbType) {
         case DatabaseType.MYSQL:
-          return `mysql://${username}:${password}@localhost:${hostPort}/${dbName}`
+          return `mysql://${username}:${password}@${host}:${hostPort}/${dbName}`
         case DatabaseType.POSTGRES:
-          return `postgres://${username}:${password}@localhost:${hostPort}/${dbName}`
+          return `postgres://${username}:${password}@${host}:${hostPort}/${dbName}`
         case DatabaseType.MONGODB:
-          return `mongodb://${username}:${password}@localhost:${hostPort}/${dbName}`
+          return `mongodb://${username}:${password}@${host}:${hostPort}/${dbName}`
         case DatabaseType.REDIS:
-          return `redis://${username}:${password}@localhost:${hostPort}`
+          return `redis://${username}:${password}@${host}:${hostPort}`
         default:
           throw new Error('Tipo de base de datos no soportado')
       }
