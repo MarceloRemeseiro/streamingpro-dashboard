@@ -1,0 +1,59 @@
+# Eliminar la línea de 'version' y asegurar la configuración de redes
+networks:
+  app-network:
+    external: true
+    name: app-network  # Especificar nombre explícitamente
+
+services:
+  # Servicio principal de la aplicación
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/streamingpro
+      - NPM_API_KEY=tu_clave_secreta
+      - DOCKER_SOCKET=/var/run/docker.sock
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: sh -c "npm install && npx prisma migrate deploy && npm run dev"
+    depends_on:
+      - db
+      - nginx-proxy-manager
+    networks:
+      - app-network
+      - default
+
+  # Base de datos principal (para la aplicación)
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=streamingpro
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Nginx Proxy Manager
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    environment:
+      DB_SQLITE_FILE: "/data/database.sqlite"
+    volumes:
+      - ./data/nginx-proxy-manager:/data
+      - ./data/letsencrypt:/etc/letsencrypt
+    networks:
+      - app-network
+
+volumes:
+  db_data: 

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .dark input, .dark select, .dark textarea {
+    @apply bg-gray-700 border-gray-600 text-white;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
