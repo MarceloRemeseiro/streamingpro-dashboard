@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import docker from '@/lib/docker'
+import { deleteProxyHost } from '@/lib/npm-api'
+
+const DATABASE_DOMAIN = process.env.DATABASE_DOMAIN || 'localhost'
 
 export async function DELETE(
   request: NextRequest,
@@ -18,16 +21,20 @@ export async function DELETE(
     }
 
     try {
-      // Intentar eliminar el contenedor Docker si existe
+      // Eliminar el proxy host
+      const domain = `${database.subdomain}.${DATABASE_DOMAIN}`;
+      console.log('Intentando eliminar proxy host para:', domain);
+      await deleteProxyHost(domain);
+
+      // Intentar eliminar el contenedor Docker
       const container = docker.getContainer(database.containerId)
-      await container.stop().catch(() => {}) // Ignorar error si ya está detenido
-      await container.remove({ force: true }).catch(() => {}) // Ignorar error si no existe
+      await container.stop().catch(() => {}) 
+      await container.remove({ force: true }).catch(() => {}) 
     } catch (error) {
-      console.log('Error al eliminar contenedor Docker:', error)
-      // Continuar con la eliminación en la base de datos
+      console.error('Error al eliminar contenedor o proxy:', error)
     }
 
-    // Eliminar de la base de datos independientemente del estado del contenedor
+    // Eliminar de la base de datos
     await prisma.databaseInstance.delete({
       where: { id }
     })

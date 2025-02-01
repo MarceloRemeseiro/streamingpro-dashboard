@@ -4,6 +4,7 @@ import docker from '@/lib/docker'
 import { DatabaseType, InstanceStatus } from '@prisma/client'
 import { ProxyHostConfig } from '@/lib/npm-api'
 import type { Container, ContainerInspectInfo } from 'dockerode'
+import { createProxyHost } from '@/lib/npm-api'
 
 interface NetworkContainer {
   Name: string;
@@ -127,46 +128,51 @@ export async function POST(request: NextRequest) {
     const container = await createContainer(dbType, username, password, dbName, subdomain)
     const containerInfo = await container.inspect() as ContainerInspectInfo
 
-    // Usar la misma lógica de puertos que en createContainer
+    // Primero definimos el puerto interno
     const containerPort = (() => {
       switch (dbType) {
-        case DatabaseType.MYSQL:
-          return '3306/tcp'
         case DatabaseType.POSTGRES:
-          return '5432/tcp'
+          return 5432;
+        case DatabaseType.MYSQL:
+          return 3306;
         case DatabaseType.MONGODB:
-          return '27017/tcp'
+          return 27017;
         case DatabaseType.REDIS:
-          return '6379/tcp'
+          return 6379;
         default:
-          throw new Error('Tipo de base de datos no soportado')
+          throw new Error('Tipo de base de datos no soportado');
       }
-    })()
+    })();
 
-    const hostPort = containerInfo.NetworkSettings.Ports[containerPort][0].HostPort
+    // Obtener el puerto mapeado del contenedor
+    const dockerPort = `${containerPort}/tcp`;
+    const hostPort = containerInfo.NetworkSettings.Ports[dockerPort][0].HostPort;
 
-    // Configurar proxy con el puerto correcto
+    // Configuración del proxy (usa el puerto EXPUESTO)
     const proxyConfig: ProxyHostConfig = {
       domain_names: [`${subdomain}.${DATABASE_DOMAIN}`],
       forward_scheme: 'http',
       forward_host: containerName,
-      forward_port: parseInt(containerPort.split('/')[0]), // Extraer solo el número del puerto
+      forward_port: parseInt(hostPort), // Usamos el puerto expuesto (55025)
       ssl_forced: true
-    }
+    };
 
-    // Actualizar URL de conexión según el tipo
+    console.log('Intentando crear proxy host para:', subdomain);
+    await createProxyHost(proxyConfig);
+
+    // URL de conexión (sin puerto expuesto)
     const connectionUrl = (() => {
       const host = `${subdomain}.${DATABASE_DOMAIN}`
       
       switch (dbType) {
-        case DatabaseType.MYSQL:
-          return `mysql://${username}:${password}@${host}:${hostPort}/${dbName}`
         case DatabaseType.POSTGRES:
-          return `postgres://${username}:${password}@${host}:${hostPort}/${dbName}`
+          return `postgres://${username}:${password}@${host}/${dbName}`;
+        case DatabaseType.MYSQL:
+          return `mysql://${username}:${password}@${host}/${dbName}`
         case DatabaseType.MONGODB:
-          return `mongodb://${username}:${password}@${host}:${hostPort}/${dbName}`
+          return `mongodb://${username}:${password}@${host}/${dbName}`
         case DatabaseType.REDIS:
-          return `redis://${username}:${password}@${host}:${hostPort}`
+          return `redis://${username}:${password}@${host}`
         default:
           throw new Error('Tipo de base de datos no soportado')
       }
