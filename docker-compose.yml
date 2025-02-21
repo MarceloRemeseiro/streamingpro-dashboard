@@ -2,7 +2,7 @@
 networks:
   app-network:
     external: true
-    name: app-network  # Especificar nombre explícitamente
+    name: app-network
 
 services:
   # Servicio principal de la aplicación
@@ -12,32 +12,19 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/streamingpro
       - NPM_API_KEY=tu_clave_secreta
       - DOCKER_SOCKET=/var/run/docker.sock
+      - NPM_EMAIL=sincrosav@gmail.com
+      - NPM_PASSWORD=sincros2808
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
     command: sh -c "npm install && npx prisma migrate deploy && npm run dev"
     depends_on:
-      - db
       - nginx-proxy-manager
     networks:
       - app-network
       - default
-
-  # Base de datos principal (para la aplicación)
-  db:
-    image: postgres:15
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=streamingpro
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    networks:
-      - app-network
 
   # Nginx Proxy Manager
   nginx-proxy-manager:
@@ -55,5 +42,3 @@ services:
     networks:
       - app-network
 
-volumes:
-  db_data: 

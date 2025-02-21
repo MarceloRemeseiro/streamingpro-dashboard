@@ -1,5 +1,8 @@
 FROM node:18-alpine
 
+# Instalar cliente PostgreSQL para pg_dump
+RUN apk add --no-cache postgresql-client
+
 WORKDIR /app
 
 COPY package*.json ./

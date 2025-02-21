@@ -42,13 +42,16 @@ export default function CreateDatabaseModal({
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error("Error al crear");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al crear la base de datos");
+      }
 
       onCreate();
       onClose();
     } catch (error) {
-      console.error(error);
-      alert("Error al crear la base de datos");
+      alert(error instanceof Error ? error.message : "Error al crear la base de datos");
     } finally {
       setIsSubmitting(false);
     }

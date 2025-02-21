@@ -13,6 +13,7 @@ interface Props {
 
 export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange }: Props) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const handleToggleStatus = async () => {
     setIsLoading(true)
@@ -57,6 +58,37 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
       console.error('Error deleting database:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const response = await fetch(
+        `/api/databases/${database.id}/export`,
+        { method: 'POST' }
+      )
+      
+      if (!response.ok) throw new Error('Error en la exportación')
+      
+      // Obtener el blob de la respuesta
+      const blob = await response.blob()
+      
+      // Crear URL para descarga
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${database.name}-backup.sql`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error al exportar la base de datos')
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -107,10 +139,20 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
               >
                 Eliminar
               </button>
+
+              {database.dbType === 'POSTGRES' && (
+                <button
+                  onClick={handleExport}
+                  disabled={isExporting || database.status !== 'RUNNING'}
+                  className="px-4 py-2 rounded-md bg-green-500 hover:bg-green-600 text-white disabled:opacity-50"
+                >
+                  {isExporting ? 'Exportando...' : 'Exportar datos'}
+                </button>
+              )}
             </div>
           </div>
 
-          <Dialog.Close className="absolute top-4 right-4 text-gray-900 dark:text-gray-300 hover:text-gray-500">
+          <Dialog.Close className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
             ✕
           </Dialog.Close>
         </Dialog.Content>

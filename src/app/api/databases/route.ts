@@ -4,7 +4,7 @@ import docker from '@/lib/docker'
 import { DatabaseType, InstanceStatus } from '@prisma/client'
 import { ProxyHostConfig } from '@/lib/npm-api'
 import type { Container, ContainerInspectInfo } from 'dockerode'
-import { createProxyHost } from '@/lib/npm-api'
+import { createProxyHost, checkDomainExists } from '@/lib/npm-api'
 
 interface NetworkContainer {
   Name: string;
@@ -54,8 +54,24 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Variables de entorno:', {
+      NPM_EMAIL: process.env.NPM_EMAIL,
+      // No logueamos NPM_PASSWORD por seguridad
+    });
+
     const { name, dbType, subdomain, username, password, dbName } = await request.json()
     
+    // Verificar si el subdominio ya existe
+    const domainName = `${subdomain}.${DATABASE_DOMAIN}`;
+    const exists = await checkDomainExists(domainName);
+    
+    if (exists) {
+      return NextResponse.json(
+        { error: 'El subdominio ya está en uso' },
+        { status: 400 }
+      )
+    }
+
     console.log('Docker info:', await docker.info())
     
     // 1. Crear contenedor Docker
@@ -183,7 +199,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         dbType,
-        subdomain,
+        subdomain: `${name}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         containerId: containerInfo.Id,
         connectionUrl,
         status: 'RUNNING',
