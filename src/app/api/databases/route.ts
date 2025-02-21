@@ -67,7 +67,19 @@ export async function POST(request: NextRequest) {
     
     if (exists) {
       return NextResponse.json(
-        { error: 'El subdominio ya está en uso' },
+        { error: `El subdominio ${subdomain} ya está en uso. Por favor, elige otro.` },
+        { status: 400 }
+      )
+    }
+
+    // También verificar en nuestra base de datos
+    const existingDatabase = await prisma.databaseInstance.findUnique({
+      where: { subdomain }
+    });
+
+    if (existingDatabase) {
+      return NextResponse.json(
+        { error: `El subdominio ${subdomain} ya está en uso. Por favor, elige otro.` },
         { status: 400 }
       )
     }
@@ -199,7 +211,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         dbType,
-        subdomain: `${name}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+        subdomain,
         containerId: containerInfo.Id,
         connectionUrl,
         status: 'RUNNING',
