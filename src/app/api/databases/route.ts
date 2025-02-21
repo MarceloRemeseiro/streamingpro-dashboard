@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       await docker.createNetwork({ Name: 'app-network' })
     }
 
-    const container = await createContainer(dbType, username, password, dbName, subdomain)
+    const { container, volumeName } = await createContainer(dbType, username, password, dbName, subdomain)
     const containerInfo = await container.inspect() as ContainerInspectInfo
 
     // Primero definimos el puerto interno
@@ -216,7 +216,8 @@ export async function POST(request: NextRequest) {
         connectionUrl,
         status: 'RUNNING',
         portMappings: containerInfo.NetworkSettings.Ports,
-        environment: { username, password, dbName }
+        environment: { username, password, dbName },
+        volumes: volumeName
       }
     })
     
@@ -248,8 +249,19 @@ const createContainer = async (
     [DatabaseType.REDIS]: 'redis:7'
   }
 
-  const containerName = `db-${subdomain.replace(/[^a-z0-9]/g, '-')}`
-  const imageName = imageMap[dbType]
+  const containerName = `db-${subdomain.replace(/[^a-z0-9]/g, '-')}`;
+  const volumeName = `${containerName}-data`;
+  const imageName = imageMap[dbType];
+
+  // Crear el volumen si no existe
+  try {
+    await docker.createVolume({
+      Name: volumeName,
+      Driver: 'local'
+    });
+  } catch (error) {
+    console.log('El volumen ya existe o error al crear:', error);
+  }
 
   // Verificar si la imagen existe, si no, descargarla
   try {
@@ -316,7 +328,23 @@ const createContainer = async (
     }
   })()
 
-  // Crear contenedor con puerto específico
+  // Configurar el punto de montaje según el tipo de BD
+  const mountPoint = (() => {
+    switch (dbType) {
+      case DatabaseType.POSTGRES:
+        return '/var/lib/postgresql/data';
+      case DatabaseType.MYSQL:
+        return '/var/lib/mysql';
+      case DatabaseType.MONGODB:
+        return '/data/db';
+      case DatabaseType.REDIS:
+        return '/data';
+      default:
+        throw new Error('Tipo de base de datos no soportado');
+    }
+  })();
+
+  // Crear contenedor con volumen
   const container = await docker.createContainer({
     name: containerName,
     Image: imageName,
@@ -326,14 +354,11 @@ const createContainer = async (
     },
     HostConfig: {
       PortBindings: {
-        [port]: [
-          {
-            HostPort: '0' // Docker asignará un puerto disponible
-          }
-        ]
-      }
+        [port]: [{ HostPort: '0' }]
+      },
+      Binds: [`${volumeName}:${mountPoint}`]
     }
-  })
+  });
 
   await container.start()
   
@@ -356,5 +381,8 @@ const createContainer = async (
     throw error
   }
   
-  return container
+  return {
+    container,
+    volumeName
+  };
 } 

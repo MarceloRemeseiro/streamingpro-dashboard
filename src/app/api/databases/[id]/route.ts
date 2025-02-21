@@ -34,6 +34,16 @@ export async function DELETE(
       console.error('Error al eliminar contenedor o proxy:', error)
     }
 
+    // Eliminar volumen
+    if (database.volumes) {
+      try {
+        const volume = docker.getVolume(database.volumes);
+        await volume.remove().catch(() => {});
+      } catch (error) {
+        console.error('Error al eliminar volumen:', error);
+      }
+    }
+
     // Eliminar de la base de datos
     await prisma.databaseInstance.delete({
       where: { id }
