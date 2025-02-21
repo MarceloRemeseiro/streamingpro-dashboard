@@ -1,7 +1,12 @@
 FROM node:18-alpine
 
-# Instalar cliente PostgreSQL para pg_dump
-RUN apk add --no-cache postgresql-client
+# Instalar clientes de bases de datos
+RUN apk add --no-cache \
+    postgresql-client \
+    mysql-client \
+    mysql-connector \
+    mongodb-tools \
+    redis
 
 WORKDIR /app
 

@@ -74,11 +74,22 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
       // Obtener el blob de la respuesta
       const blob = await response.blob()
       
+      // Determinar la extensión del archivo según el tipo de BD
+      const extension = (() => {
+        switch (database.dbType) {
+          case 'POSTGRES': return 'sql'
+          case 'MYSQL': return 'sql'
+          case 'MONGODB': return 'json'
+          case 'REDIS': return 'rdb'
+          default: return 'backup'
+        }
+      })()
+      
       // Crear URL para descarga
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${database.name}-backup.sql`
+      a.download = `${database.name}-backup.${extension}`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -140,7 +151,7 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
                 Eliminar
               </button>
 
-              {database.dbType === 'POSTGRES' && (
+              {['POSTGRES', 'MYSQL', 'MONGODB', 'REDIS'].includes(database.dbType) && (
                 <button
                   onClick={handleExport}
                   disabled={isExporting || database.status !== 'RUNNING'}
