@@ -5,9 +5,6 @@ import {
   LuLink, 
   LuArrowDown, 
   LuArrowUp, 
-  LuActivity,
-  LuCheck,
-  LuX,
   LuCpu,
   LuServer,
   LuUsers

@@ -42,6 +42,17 @@ export interface ProxyHostConfig {
   certificate_id?: number;
 }
 
+interface ProxyHost extends ProxyHostConfig {
+  id: number;
+  created_on: string;
+  modified_on: string;
+  owner_user_id: number;
+  meta?: {
+    letsencrypt_agree?: boolean;
+    dns_challenge?: boolean;
+  };
+}
+
 export const createProxyHost = async (config: ProxyHostConfig) => {
   console.log('Creando proxy host con config:', config);
   
@@ -55,8 +66,8 @@ export const createProxyHost = async (config: ProxyHostConfig) => {
       }
     });
     
-    const hosts = await response.json();
-    const existingHost = hosts.find((host: any) => 
+    const hosts = await response.json() as ProxyHost[];
+    const existingHost = hosts.find((host: ProxyHost) => 
       host.domain_names.includes(config.domain_names[0])
     );
 
@@ -108,8 +119,8 @@ export const deleteProxyHost = async (domain: string) => {
       }
     });
     
-    const hosts = await response.json();
-    const proxyHost = hosts.find((host: any) => 
+    const hosts = await response.json() as ProxyHost[];
+    const proxyHost = hosts.find((host: ProxyHost) => 
       host.domain_names.includes(domain)
     );
     
@@ -149,8 +160,8 @@ export const checkDomainExists = async (domain: string): Promise<boolean> => {
       }
     });
     
-    const hosts = await response.json();
-    return hosts.some((host: any) => host.domain_names.includes(domain));
+    const hosts = await response.json() as ProxyHost[];
+    return hosts.some((host: ProxyHost) => host.domain_names.includes(domain));
   } catch (error) {
     console.error('Error checking domain:', error);
     throw error;

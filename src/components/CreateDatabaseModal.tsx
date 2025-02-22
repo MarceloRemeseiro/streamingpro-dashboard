@@ -32,7 +32,6 @@ export default function CreateDatabaseModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [importType, setImportType] = useState<ImportType>('NONE');
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [externalMode, setExternalMode] = useState(false);
   const [externalDb, setExternalDb] = useState({
     host: '',
     port: '',

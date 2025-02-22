@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import docker from '@/lib/docker'
-import { DatabaseType, InstanceStatus } from '@prisma/client'
+import { DatabaseType, DatabaseInstance } from '@prisma/client'
 import { ProxyHostConfig } from '@/lib/npm-api'
-import type { Container, ContainerInspectInfo } from 'dockerode'
+import type { ContainerInspectInfo } from 'dockerode'
 import { createProxyHost, checkDomainExists } from '@/lib/npm-api'
 
 interface NetworkContainer {
   Name: string;
   Id: string;
+}
+
+interface DockerContainer {
+  Names: string[];
+  Id: string;
+  State: string;
+  Status: string;
+}
+
+interface PullError {
+  message: string;
+}
+
+interface PullOutput {
+  status: string;
+  id?: string;
+  progress?: string;
 }
 
 const DATABASE_DOMAIN = process.env.DATABASE_DOMAIN || 'localhost'
@@ -21,7 +38,7 @@ export async function GET() {
     
     // Actualizar estado real de cada contenedor
     const updatedDatabases = await Promise.all(
-      databases.map(async (db) => {
+      databases.map(async (db: DatabaseInstance) => {
         try {
           const container = docker.getContainer(db.containerId)
           const info = await container.inspect()
@@ -88,7 +105,7 @@ export async function POST(request: NextRequest) {
     
     // 1. Crear contenedor Docker
     const existingContainers = await docker.listContainers({ all: true })
-    const existingNames = existingContainers.map((c: any) => c.Names[0].replace('/', ''))
+    const existingNames = existingContainers.map((c: DockerContainer) => c.Names[0].replace('/', ''))
 
     const containerName = `db-${subdomain.replace(/[^a-z0-9]/g, '-')}`
 
@@ -259,10 +276,10 @@ const createContainer = async (
   } catch (error) {
     console.log(`Error al descargar imagen ${imageName}:`, error instanceof Error ? error.message : 'Error desconocido')
     await new Promise((resolve, reject) => {
-      docker.pull(imageName, (err: any, stream: any) => {
+      docker.pull(imageName, (err: PullError | null, stream: NodeJS.ReadableStream) => {
         if (err) return reject(err)
         
-        docker.modem.followProgress(stream, (err: any, output: any) => {
+        docker.modem.followProgress(stream, (err: PullError | null, output: PullOutput[]) => {
           if (err) return reject(err)
           resolve(output)
         })

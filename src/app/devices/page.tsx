@@ -1,8 +1,13 @@
 import { prisma } from '@/lib/prisma'
 import DeviceTable from '@/components/DeviceTable'
-import type { Device, DeviceType } from '.prisma/client'
-import ThemeProvider from '@/components/ThemeProvider';
 import Layout from '../layout';
+import type { DeviceType } from '@prisma/client'
+
+type DeviceCapabilities = {
+  video?: string[];
+  audio?: string[];
+  network?: string[];
+};
 
 type DeviceWithConfig = {
   id: string;
@@ -12,7 +17,7 @@ type DeviceWithConfig = {
   os: string;
   localIp: string;
   publicIp: string;
-  capabilities: any;
+  capabilities: DeviceCapabilities;
   lastSeen: Date;
   createdAt: Date;
   configs: Array<{

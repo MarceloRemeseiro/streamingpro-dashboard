@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { RESTREAMER_CREDENTIALS } from '@/lib/constants';
 
 interface ProcessState {
   state: string;
@@ -15,6 +14,22 @@ interface Process {
   name: string;
   type: string;
   state: ProcessState;
+}
+
+interface Metric {
+  name: string;
+  value: number;
+}
+
+interface Session {
+  id: string;
+  bandwidth_rx_kbit: number;
+  bandwidth_tx_kbit: number;
+  state: string;
+}
+
+interface SessionList {
+  [key: string]: Session[];
 }
 
 interface SystemMetrics {
@@ -107,7 +122,7 @@ export async function POST(request: Request) {
     console.log('- Sesiones:', sessions);
 
     // Encontrar métricas específicas
-    const cpuCores = metrics.find((m: any) => m.name === 'cpu_ncpu')?.value || 0;
+    const cpuCores = metrics.find((m: Metric) => m.name === 'cpu_ncpu')?.value || 0;
     const totalCpuUsage = processes.reduce((acc: number, process: Process) => {
       return acc + (process.state?.cpu_usage || 0);
     }, 0);
@@ -121,7 +136,7 @@ export async function POST(request: Request) {
     let totalSessions = 0;
 
     // Procesar sesiones activas
-    Object.values(sessions).forEach((sessionList: any) => {
+    Object.values(sessions as SessionList).forEach((sessionList: Session[]) => {
       if (Array.isArray(sessionList)) {
         sessionList.forEach(session => {
           totalRxBitrate += session.bandwidth_rx_kbit || 0;

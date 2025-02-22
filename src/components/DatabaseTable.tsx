@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { DatabaseInstance, DatabaseType, InstanceStatus } from '@prisma/client'
+import { DatabaseInstance } from '@prisma/client'
 import { DatabaseActionsModal } from './DatabaseActionsModal';
 
 interface Props {
   databases: DatabaseInstance[]
-  onRefresh?: () => void  // Hacer opcional para mantener compatibilidad
+  onRefresh?: () => void
 }
 
 export default function DatabaseTable({ databases, onRefresh }: Props) {
@@ -19,11 +19,6 @@ export default function DatabaseTable({ databases, onRefresh }: Props) {
       case 'ERROR': return 'bg-yellow-500';
       default: return 'bg-gray-500';
     }
-  }
-
-  const getTypeIcon = (type: DatabaseType) => {
-    // Puedes añadir iconos específicos para cada tipo
-    return '🛢️';
   }
 
   return (
@@ -68,9 +63,7 @@ export default function DatabaseTable({ databases, onRefresh }: Props) {
           isOpen={!!selectedDb}
           onClose={() => setSelectedDb(null)}
           onStatusChange={() => {
-            // Llamar a onRefresh si existe
             onRefresh?.()
-            // Cerrar el modal
             setSelectedDb(null)
           }}
         />

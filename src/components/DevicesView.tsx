@@ -3,7 +3,6 @@
 import { Suspense } from 'react'
 import useSWR from 'swr'
 import DeviceTable from '@/components/DeviceTable'
-import type { Device, DeviceType } from '.prisma/client'
 import type { DeviceWithConfig } from '@/lib/types'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())

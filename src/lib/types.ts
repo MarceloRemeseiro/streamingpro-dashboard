@@ -1,5 +1,19 @@
 export type DeviceType = 'RASPBERRY' | 'LINUX_PC'
 
+export interface DeviceCapabilities {
+  video?: string[];
+  audio?: string[];
+  network?: string[];
+  storage?: {
+    total: number;
+    free: number;
+  };
+  memory?: {
+    total: number;
+    free: number;
+  };
+}
+
 export interface Device {
   id: string
   deviceId: string
@@ -8,7 +22,7 @@ export interface Device {
   os: string
   localIp: string
   publicIp: string
-  capabilities: any
+  capabilities: DeviceCapabilities
   lastSeen: Date
   createdAt: Date
 }
