@@ -158,7 +158,7 @@ export default function CreateDatabaseModal({
                 placeholder="mi-db"
                 required
               />
-              <span className="whitespace-nowrap text-gray-900 dark:text-gray-200">.streamingpro.es</span>
+              <span className="whitespace-nowrap text-gray-900 dark:text-gray-200">.streamingpro.marceloremeseiro.com</span>
             </div>
           </div>
 

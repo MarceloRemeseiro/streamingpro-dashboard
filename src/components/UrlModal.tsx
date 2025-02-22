@@ -10,7 +10,7 @@ interface UrlModalProps {
 export function UrlModal({ url, onClose, onSave }: UrlModalProps) {
   const [formData, setFormData] = useState({
     name: url?.name || '',
-    subdomain: url?.url ? url.url.replace('https://', '').replace('.streamingpro.es', '') : '',
+    subdomain: url?.url ? url.url.replace('https://', '').replace('.streamingpro.marceloremeseiro.com', '') : '',
     startDate: url?.startDate ? new Date(url.startDate).toISOString().split('T')[0] : '',
     endDate: url?.endDate ? new Date(url.endDate).toISOString().split('T')[0] : '',
   });
@@ -19,7 +19,7 @@ export function UrlModal({ url, onClose, onSave }: UrlModalProps) {
     e.preventDefault();
     await onSave({
       name: formData.name,
-      url: `https://${formData.subdomain}.streamingpro.es`,
+      url: `https://${formData.subdomain}.streamingpro.marceloremeseiro.com`,
       startDate: new Date(formData.startDate + 'T00:00:00Z').toISOString(),
       endDate: new Date(formData.endDate + 'T23:59:59Z').toISOString(),
     });
@@ -70,7 +70,7 @@ export function UrlModal({ url, onClose, onSave }: UrlModalProps) {
               />
               <span className="inline-flex items-center px-3 py-2 rounded-r-md border border-l-0 border-gray-300 
                            dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
-                .streamingpro.es
+                .streamingpro.marceloremeseiro.com
               </span>
             </div>
           </div>
