@@ -355,6 +355,7 @@ const createContainer = async (
   // Obtener información actualizada después de iniciar
   const containerInfo = await container.inspect() as ContainerInspectInfo
   const hostPort = containerInfo.NetworkSettings.Ports[port][0].HostPort
+  console.log('Host port:', hostPort)
   
   // Conectar a la red
   try {
