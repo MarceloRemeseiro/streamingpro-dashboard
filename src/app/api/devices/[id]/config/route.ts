@@ -12,7 +12,7 @@ export async function GET(
     })
 
     return NextResponse.json({
-      clientServer: config?.clientServer || process.env.DEFAULT_CLIENT_SERVER || 'http://localhost:3001',
+      clientServer: config?.clientServer || process.env.NEXT_PUBLIC_DEFAULT_CLIENT_SERVER || 'http://localhost:3001',
       srtUrl: config?.srtUrl,
       updatedAt: config?.updatedAt || new Date()
     })

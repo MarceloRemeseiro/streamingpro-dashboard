@@ -28,7 +28,7 @@ interface PullOutput {
   progress?: string;
 }
 
-const DATABASE_DOMAIN = process.env.DATABASE_DOMAIN || 'localhost'
+const DATABASE_DOMAIN = process.env.NEXT_PUBLIC_DATABASE_DOMAIN || 'localhost'
 
 export async function GET() {
   try {

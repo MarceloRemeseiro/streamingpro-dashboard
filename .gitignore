@@ -47,3 +47,5 @@ next-env.d.ts
 data/database.sqlite
 data/dev.db
 prisma/dev.db
+
+/scripts
