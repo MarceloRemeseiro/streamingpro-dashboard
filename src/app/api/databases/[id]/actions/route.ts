@@ -4,12 +4,15 @@ import docker from '@/lib/docker'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type Props = {
+  params: {
+    id: string
+  }
+}
+
+export async function POST(request: NextRequest, props: Props) {
   try {
-    const { id } = await params
+    const { id } = await props.params
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
