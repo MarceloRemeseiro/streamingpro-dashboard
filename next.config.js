@@ -9,6 +9,11 @@ const nextConfig = {
   env: {
     PORT: "1001"
   },
+  // Forzar modo dinámico
+  dynamicParams: true,
+  // Deshabilitar la generación estática
+  staticPageGenerationTimeout: 0,
+  generateStaticParams: false,
   webpack: (config, { isServer }) => {
     // Ignorar módulos específicos que no son necesarios
     config.resolve.fallback = {
