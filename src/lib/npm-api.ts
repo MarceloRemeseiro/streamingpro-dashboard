@@ -1,35 +1,39 @@
-const NPM_API = 'http://nginx-proxy-manager:81/api';
+import { NPM_API, NPM_EMAIL, NPM_PASSWORD } from '@/lib/constants'
 
-async function getToken() {
-  const email = process.env.NPM_EMAIL;
-  const password = process.env.NPM_PASSWORD;
-
-  console.log('Intentando obtener token con:', { email });  // No logueamos la contraseña por seguridad
+export async function getToken() {
+  if (!NPM_API || !NPM_EMAIL) {
+    throw new Error('NPM_API y NPM_EMAIL son requeridos')
+  }
 
   try {
+    console.log('Intentando obtener token con:', {
+      api: NPM_API,
+      email: NPM_EMAIL,
+    });
+
     const response = await fetch(`${NPM_API}/tokens`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        identity: email,
-        secret: password
+        identity: NPM_EMAIL,
+        secret: NPM_PASSWORD
       })
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Error respuesta NPM:', error);
-      throw new Error(`Failed to get NPM token: ${error}`);
+      const errorText = await response.text();
+      console.error('Respuesta completa:', errorText);
+      throw new Error(`Error al obtener token: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('Token obtenido correctamente');
     return data.token;
   } catch (error) {
-    console.error('Error completo:', error);
-    throw error;
+    console.error('Error al obtener token:', error);
+    return null;
   }
 }
 

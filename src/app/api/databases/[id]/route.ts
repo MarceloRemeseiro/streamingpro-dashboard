@@ -7,9 +7,9 @@ const DATABASE_DOMAIN = process.env.DATABASE_DOMAIN || 'localhost'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id
+  const { id } = await params
   
   try {
     const database = await prisma.databaseInstance.findUnique({
@@ -61,21 +61,13 @@ export async function DELETE(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+  
   try {
-    const { searchParams } = new URL(request.url)
-    const action = searchParams.get('action')
-    
-    if (!action) {
-      return NextResponse.json(
-        { error: 'Missing action parameter' },
-        { status: 400 }
-      )
-    }
-    
     const database = await prisma.databaseInstance.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!database) {
@@ -89,7 +81,7 @@ export async function POST(
 
     // Eliminar de la base de datos
     await prisma.databaseInstance.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })
@@ -104,7 +96,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

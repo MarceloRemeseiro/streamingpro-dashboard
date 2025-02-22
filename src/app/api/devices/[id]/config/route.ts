@@ -3,11 +3,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const config = await prisma.deviceConfig.findFirst({
-      where: { device: { deviceId: params.id } },
+      where: { device: { deviceId: (await params).id } },
       orderBy: { updatedAt: 'desc' }
     })
 

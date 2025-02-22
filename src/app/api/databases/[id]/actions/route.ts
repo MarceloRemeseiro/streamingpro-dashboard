@@ -1,41 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import docker from '@/lib/docker'
 
 export const dynamic = 'force-dynamic'
 
-type Props = {
-  params: {
-    id: string
-  }
-}
 
-export async function POST(request: NextRequest, props: Props) {
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = await props.params
-    const { searchParams } = new URL(request.url)
+    const { id } = await params
+    const { searchParams } = new URL(req.url)
     const action = searchParams.get('action')
-
+    
     if (!action) {
       return NextResponse.json(
         { error: 'Parámetro "action" requerido' },
         { status: 400 }
       )
     }
-
+    
     const database = await prisma.databaseInstance.findUnique({
       where: { id }
     })
-
+    
     if (!database) {
       return NextResponse.json(
-        { error: 'Base de datos no encontrada' }, 
+        { error: 'Base de datos no encontrada' },
         { status: 404 }
       )
     }
-
+    
     const container = docker.getContainer(database.containerId)
-
+    
     switch (action.toLowerCase()) {
       case 'start':
         await container.start()
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest, props: Props) {
           data: { status: 'RUNNING' }
         })
         break
-        
+
       case 'stop':
         await container.stop()
         await prisma.databaseInstance.update({
@@ -52,14 +51,14 @@ export async function POST(request: NextRequest, props: Props) {
           data: { status: 'STOPPED' }
         })
         break
-        
+
       default:
         return NextResponse.json(
           { error: 'Acción no válida' },
           { status: 400 }
         )
     }
-
+    
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error procesando acción:', error)
@@ -68,4 +67,4 @@ export async function POST(request: NextRequest, props: Props) {
       { status: 500 }
     )
   }
-} 
+}

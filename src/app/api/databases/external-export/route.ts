@@ -1,7 +1,13 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
+
 export async function POST(request: NextRequest) {
   const { dbType, host, port, username, password, dbName } = await request.json();
   
-  let command: string;
+  let command = '';  // Initialize with empty string
   
   switch (dbType) {
     case 'POSTGRES':

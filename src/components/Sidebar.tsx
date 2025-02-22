@@ -1,46 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LuLayoutDashboard, LuMonitor, LuLink, LuRadio, LuDatabase } from "react-icons/lu";
 import ThemeToggle from "./ThemeToggle";
 
 const menuItems = [
   {
-    href: "/?view=dashboard",
+    href: "/",
     label: "Dashboard",
     icon: LuLayoutDashboard,
-    view: "dashboard"
+    path: "/"
   },
   {
-    href: "/?view=devices",
+    href: "/devices",
     label: "Dispositivos",
     icon: LuMonitor,
-    view: "devices"
+    path: "/devices"
   },
   {
-    href: "/?view=urls",
+    href: "/urls",
     label: "URLs",
     icon: LuLink,
-    view: "urls"
+    path: "/urls"
   },
   {
-    href: "/?view=central",
+    href: "/central",
     label: "Central",
     icon: LuRadio,
-    view: "central"
+    path: "/central"
   },
   {
-    href: "/?view=databases",
+    href: "/databases",
     label: "Bases de datos",
     icon: LuDatabase,
-    view: "databases"
+    path: "/databases"
   }
 ];
 
 export default function Sidebar() {
-  const searchParams = useSearchParams();
-  const currentView = searchParams.get('view') || 'dashboard';
+  const pathname = usePathname();
 
   return (
     <nav className="w-64 border-r border-gray-200 dark:border-gray-800 p-4 fixed h-full bg-white dark:bg-gray-900">
@@ -52,7 +51,7 @@ export default function Sidebar() {
       <div className="space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = currentView === item.view;
+          const isActive = pathname === item.path;
           
           return (
             <Link
