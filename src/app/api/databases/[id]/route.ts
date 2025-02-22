@@ -100,4 +100,45 @@ export async function POST(
       { status: 500 }
     )
   }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = await params;
+    const database = await prisma.databaseInstance.findUnique({
+      where: { id }
+    });
+
+    if (!database) {
+      return NextResponse.json(
+        { error: 'Database not found' },
+        { status: 404 }
+      );
+    }
+
+    // Obtener estado actual del contenedor
+    try {
+      const container = docker.getContainer(database.containerId);
+      const info = await container.inspect();
+      const status = info.State.Running ? 'RUNNING' : 'STOPPED';
+
+      return NextResponse.json({
+        ...database,
+        status
+      });
+    } catch (error) {
+      return NextResponse.json({
+        ...database,
+        status: 'ERROR'
+      });
+    }
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Error getting database status' },
+      { status: 500 }
+    );
+  }
 } 

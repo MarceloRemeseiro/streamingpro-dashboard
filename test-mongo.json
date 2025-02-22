@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "created_at": { "$date": "2025-02-22T00:00:00Z" }
+    },
+    {
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "created_at": { "$date": "2025-02-22T00:00:00Z" }
+    },
+    {
+      "name": "Bob Wilson",
+      "email": "bob@example.com",
+      "created_at": { "$date": "2025-02-22T00:00:00Z" }
+    }
+  ],
+  "posts": [
+    {
+      "user_email": "john@example.com",
+      "title": "Mi primer post",
+      "content": "Este es el contenido del primer post",
+      "created_at": { "$date": "2025-02-22T00:00:00Z" }
+    },
+    {
+      "user_email": "john@example.com",
+      "title": "Otro post",
+      "content": "Más contenido interesante",
+      "created_at": { "$date": "2025-02-22T00:00:00Z" }
+    },
+    {
+      "user_email": "jane@example.com",
+      "title": "Hola mundo",
+      "content": "Un post de Jane",
+      "created_at": { "$date": "2025-02-22T00:00:00Z" }
+    }
+  ]
+} 

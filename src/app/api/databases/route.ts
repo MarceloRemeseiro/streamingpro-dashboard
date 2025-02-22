@@ -285,10 +285,13 @@ const createContainer = async (
     switch (dbType) {
       case DatabaseType.MYSQL:
         return [
+          `MYSQL_ROOT_PASSWORD=${password}`,
           `MYSQL_USER=${username}`,
           `MYSQL_PASSWORD=${password}`,
           `MYSQL_DATABASE=${dbName}`,
-          `MYSQL_ROOT_PASSWORD=${password}`
+          // Forzar autenticación nativa
+          'MYSQL_ROOT_HOST=%',
+          'MYSQL_DEFAULT_AUTHENTICATION_PLUGIN=mysql_native_password'
         ]
       case DatabaseType.POSTGRES:
         return [

@@ -62,46 +62,37 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
   }
 
   const handleExport = async () => {
-    setIsExporting(true)
     try {
-      const response = await fetch(
-        `/api/databases/${database.id}/export`,
-        { method: 'POST' }
-      )
-      
-      if (!response.ok) throw new Error('Error en la exportación')
-      
-      // Obtener el blob de la respuesta
-      const blob = await response.blob()
-      
-      // Determinar la extensión del archivo según el tipo de BD
-      const extension = (() => {
-        switch (database.dbType) {
-          case 'POSTGRES': return 'sql'
-          case 'MYSQL': return 'sql'
-          case 'MONGODB': return 'json'
-          case 'REDIS': return 'rdb'
-          default: return 'backup'
-        }
-      })()
-      
-      // Crear URL para descarga
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${database.name}-backup.${extension}`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      
+      const response = await fetch(`/api/databases/${database.id}/export`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al exportar la base de datos');
+      }
+
+      // Obtener el nombre del archivo del header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition?.split('filename=')[1] || 
+        `${database.name}-backup.${
+          database.dbType === 'POSTGRES' || database.dbType === 'MYSQL' ? 'sql' :
+          database.dbType === 'MONGODB' ? 'archive' : 'rdb'
+        }`;
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error('Error:', error)
-      alert('Error al exportar la base de datos')
-    } finally {
-      setIsExporting(false)
+      console.error('Error:', error);
+      alert(error instanceof Error ? error.message : 'Error al exportar');
     }
-  }
+  };
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>

@@ -28,6 +28,8 @@ export default function CreateDatabaseModal({
     dbName: "defaultdb",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [importMode, setImportMode] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   const databaseTypes: DatabaseType[] = Object.values(DatabaseType) as DatabaseType[];
 
@@ -36,6 +38,7 @@ export default function CreateDatabaseModal({
     setIsSubmitting(true);
 
     try {
+      // 1. Crear la base de datos
       const response = await fetch("/api/databases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,6 +49,42 @@ export default function CreateDatabaseModal({
 
       if (!response.ok) {
         throw new Error(data.error || "Error al crear la base de datos");
+      }
+
+      // 2. Si hay archivo, esperar a que el contenedor esté listo y luego importar
+      if (importMode && importFile) {
+        // Esperar a que el contenedor esté listo (polling)
+        let retries = 0;
+        const maxRetries = 10;
+        
+        while (retries < maxRetries) {
+          const statusResponse = await fetch(`/api/databases/${data.id}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.status === 'RUNNING') {
+            // Contenedor listo, proceder con la importación
+            const formData = new FormData();
+            formData.append('file', importFile);
+            
+            const importResponse = await fetch(`/api/databases/${data.id}/import`, {
+              method: 'POST',
+              body: formData
+            });
+
+            if (!importResponse.ok) {
+              const importError = await importResponse.json();
+              throw new Error(importError.error || "Error al importar datos");
+            }
+            break;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+          retries++;
+        }
+
+        if (retries >= maxRetries) {
+          throw new Error("Timeout esperando que la base de datos esté lista");
+        }
       }
 
       onCreate();
@@ -156,6 +195,39 @@ export default function CreateDatabaseModal({
               required
             />
           </div>
+
+          <div className="mb-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={importMode}
+                onChange={(e) => setImportMode(e.target.checked)}
+              />
+              Importar datos existentes
+            </label>
+          </div>
+
+          {importMode && (
+            <div className="mb-4">
+              <input
+                type="file"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                accept={(() => {
+                  switch (formData.dbType) {
+                    case 'POSTGRES':
+                    case 'MYSQL':
+                      return '.sql';
+                    case 'MONGODB':
+                      return '.archive,.json';  // Aceptar ambos formatos
+                    case 'REDIS':
+                      return '.rdb,.txt';
+                    default:
+                      return '';
+                  }
+                })()}
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 mt-6">
             <button

@@ -34,24 +34,38 @@ export async function POST(
     
     switch (database.dbType) {
       case 'POSTGRES':
-        command = `PGPASSWORD="${password}" pg_dump -h ${containerName} -p 5432 -U ${username} ${dbName}`;
+        command = `PGPASSWORD="${password}" pg_dump -h ${containerName} -p 5432 -U ${username} ${dbName} \
+          --clean \
+          --if-exists \
+          --no-owner \
+          --no-privileges`;
         contentType = 'application/sql';
         break;
         
       case 'MYSQL':
-        // Usar mysql para hacer el dump
-        command = `mysql -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} -e "SELECT * FROM information_schema.tables WHERE table_schema = '${dbName}'" | while read table; do mysql -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} -e "SHOW CREATE TABLE \${table}; SELECT * FROM \${table};" ; done`;
+        command = `mariadb -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} -e "SELECT * FROM information_schema.tables WHERE table_schema = '${dbName}'" | while read table; do mariadb -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} -e "SHOW CREATE TABLE \${table}; SELECT * FROM \${table};" ; done`;
         contentType = 'application/sql';
         break;
         
       case 'MONGODB':
-        // Usar mongodump con autenticación explícita
         command = `mongodump --host ${containerName} --port 27017 \
           --username ${username} --password ${password} \
           --authenticationDatabase admin \
-          --authenticationMechanism SCRAM-SHA-256 \
-          --db ${dbName} --archive`;
-        contentType = 'application/octet-stream';
+          --db ${dbName} \
+          --archive`;
+        
+        // Ejecutar el comando y obtener el buffer directamente
+        const { stdout } = await execAsync(command, { 
+          encoding: 'buffer',  // Importante: especificar que queremos un buffer
+          maxBuffer: 50 * 1024 * 1024  // 50MB
+        });
+
+        return new NextResponse(stdout, {
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename=${database.name}-backup.archive`
+          }
+        });
         break;
         
       case 'REDIS':
@@ -89,7 +103,7 @@ export async function POST(
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename=${database.name}-backup.${
           database.dbType === 'POSTGRES' || database.dbType === 'MYSQL' ? 'sql' :
-          database.dbType === 'MONGODB' ? 'json' : 'rdb'
+          database.dbType === 'MONGODB' ? 'archive' : 'rdb'
         }`
       }
     });
