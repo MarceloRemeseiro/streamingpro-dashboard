@@ -26,6 +26,10 @@ const nextConfig = {
   typescript: {
     // Ignorar errores de TypeScript en producción
     ignoreBuildErrors: true,
+  },
+  // Deshabilitar la generación estática de la página 404
+  staticPages: {
+    '/404': false
   }
 }
 
