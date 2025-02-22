@@ -88,7 +88,20 @@ export default function CreateDatabaseModal({
           throw new Error(importError.error);
         }
       } else if (importType === 'FILE' && importFile) {
-        // Lógica de importación de archivo
+        // Crear FormData para el archivo
+        const importFormData = new FormData();
+        importFormData.append('file', importFile);
+
+        // Importar a la nueva DB
+        const importResponse = await fetch(`/api/databases/${data.id}/import`, {
+          method: 'POST',
+          body: importFormData
+        });
+
+        if (!importResponse.ok) {
+          const importError = await importResponse.json();
+          throw new Error(importError.error);
+        }
       }
 
       onCreate();
