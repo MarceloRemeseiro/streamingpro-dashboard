@@ -42,11 +42,6 @@ export async function POST(
         contentType = 'application/sql';
         break;
         
-      case 'MYSQL':
-        command = `mariadb -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} -e "SELECT * FROM information_schema.tables WHERE table_schema = '${dbName}'" | while read table; do mariadb -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} -e "SHOW CREATE TABLE \${table}; SELECT * FROM \${table};" ; done`;
-        contentType = 'application/sql';
-        break;
-        
       case 'MONGODB':
         command = `mongodump --host ${containerName} --port 27017 \
           --username ${username} --password ${password} \
@@ -54,10 +49,9 @@ export async function POST(
           --db ${dbName} \
           --archive`;
         
-        // Ejecutar el comando y obtener el buffer directamente
         const { stdout } = await execAsync(command, { 
-          encoding: 'buffer',  // Importante: especificar que queremos un buffer
-          maxBuffer: 50 * 1024 * 1024  // 50MB
+          encoding: 'buffer',
+          maxBuffer: 50 * 1024 * 1024
         });
 
         return new NextResponse(stdout, {
@@ -66,26 +60,6 @@ export async function POST(
             'Content-Disposition': `attachment; filename=${database.name}-backup.archive`
           }
         });
-        break;
-        
-      case 'REDIS':
-        // Primero hacer SAVE y luego obtener todas las claves y sus valores
-        command = `redis-cli -h ${containerName} -p 6379 -a "${password}" --raw SAVE && \
-          redis-cli -h ${containerName} -p 6379 -a "${password}" --raw KEYS "*" | while read key; do \
-            echo "# Key: $key"; \
-            redis-cli -h ${containerName} -p 6379 -a "${password}" --raw TYPE "$key" | { \
-              read type; \
-              case "$type" in \
-                "string") redis-cli -h ${containerName} -p 6379 -a "${password}" --raw GET "$key";; \
-                "list") redis-cli -h ${containerName} -p 6379 -a "${password}" --raw LRANGE "$key" 0 -1;; \
-                "set") redis-cli -h ${containerName} -p 6379 -a "${password}" --raw SMEMBERS "$key";; \
-                "hash") redis-cli -h ${containerName} -p 6379 -a "${password}" --raw HGETALL "$key";; \
-                "zset") redis-cli -h ${containerName} -p 6379 -a "${password}" --raw ZRANGE "$key" 0 -1 WITHSCORES;; \
-              esac; \
-            }; \
-            echo ""; \
-          done`;
-        contentType = 'text/plain';
         break;
         
       default:
@@ -102,7 +76,7 @@ export async function POST(
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename=${database.name}-backup.${
-          database.dbType === 'POSTGRES' || database.dbType === 'MYSQL' ? 'sql' :
+          database.dbType === 'POSTGRES' ? 'sql' :
           database.dbType === 'MONGODB' ? 'archive' : 'rdb'
         }`
       }

@@ -161,12 +161,8 @@ export async function POST(request: NextRequest) {
       switch (dbType) {
         case DatabaseType.POSTGRES:
           return 5432;
-        case DatabaseType.MYSQL:
-          return 3306;
         case DatabaseType.MONGODB:
           return 27017;
-        case DatabaseType.REDIS:
-          return 6379;
         default:
           throw new Error('Tipo de base de datos no soportado');
       }
@@ -195,12 +191,8 @@ export async function POST(request: NextRequest) {
       switch (dbType) {
         case DatabaseType.POSTGRES:
           return `postgres://${username}:${password}@${host}/${dbName}`;
-        case DatabaseType.MYSQL:
-          return `mysql://${username}:${password}@${host}/${dbName}`
         case DatabaseType.MONGODB:
           return `mongodb://${username}:${password}@${host}/${dbName}`
-        case DatabaseType.REDIS:
-          return `redis://${username}:${password}@${host}`
         default:
           throw new Error('Tipo de base de datos no soportado')
       }
@@ -244,10 +236,8 @@ const createContainer = async (
 ) => {
   const imageMap = {
     [DatabaseType.POSTGRES]: 'postgres:15',
-    [DatabaseType.MYSQL]: 'mysql:8',
-    [DatabaseType.MONGODB]: 'mongo:6',
-    [DatabaseType.REDIS]: 'redis:7'
-  }
+    [DatabaseType.MONGODB]: 'mongo:6'
+  };
 
   const containerName = `db-${subdomain.replace(/[^a-z0-9]/g, '-')}`;
   const volumeName = `${containerName}-data`;
@@ -283,49 +273,30 @@ const createContainer = async (
   // Configurar variables de entorno según el tipo de base de datos
   const envVars = (() => {
     switch (dbType) {
-      case DatabaseType.MYSQL:
-        return [
-          `MYSQL_ROOT_PASSWORD=${password}`,
-          `MYSQL_USER=${username}`,
-          `MYSQL_PASSWORD=${password}`,
-          `MYSQL_DATABASE=${dbName}`,
-          // Forzar autenticación nativa
-          'MYSQL_ROOT_HOST=%',
-          'MYSQL_DEFAULT_AUTHENTICATION_PLUGIN=mysql_native_password'
-        ]
       case DatabaseType.POSTGRES:
         return [
           `POSTGRES_USER=${username}`,
           `POSTGRES_PASSWORD=${password}`,
           `POSTGRES_DB=${dbName}`
-        ]
+        ];
       case DatabaseType.MONGODB:
         return [
           `MONGO_INITDB_ROOT_USERNAME=${username}`,
           `MONGO_INITDB_ROOT_PASSWORD=${password}`,
           `MONGO_INITDB_DATABASE=${dbName}`
-        ]
-      case DatabaseType.REDIS:
-        return [
-          `REDIS_USER=${username}`,
-          `REDIS_PASSWORD=${password}`
-        ]
+        ];
       default:
-        return []
+        return [];
     }
-  })()
+  })();
 
   // Configurar puerto según el tipo de base de datos
   const port = (() => {
     switch (dbType) {
-      case DatabaseType.MYSQL:
-        return '3306/tcp'
       case DatabaseType.POSTGRES:
         return '5432/tcp'
       case DatabaseType.MONGODB:
         return '27017/tcp'
-      case DatabaseType.REDIS:
-        return '6379/tcp'
       default:
         throw new Error('Tipo de base de datos no soportado')
     }
@@ -336,12 +307,8 @@ const createContainer = async (
     switch (dbType) {
       case DatabaseType.POSTGRES:
         return '/var/lib/postgresql/data';
-      case DatabaseType.MYSQL:
-        return '/var/lib/mysql';
       case DatabaseType.MONGODB:
         return '/data/db';
-      case DatabaseType.REDIS:
-        return '/data';
       default:
         throw new Error('Tipo de base de datos no soportado');
     }

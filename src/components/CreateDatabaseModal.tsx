@@ -12,6 +12,8 @@ interface FormData {
   dbName: string;
 }
 
+type ImportType = 'NONE' | 'FILE' | 'EXTERNAL';
+
 export default function CreateDatabaseModal({
   onClose,
   onCreate,
@@ -28,8 +30,16 @@ export default function CreateDatabaseModal({
     dbName: "defaultdb",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [importMode, setImportMode] = useState(false);
+  const [importType, setImportType] = useState<ImportType>('NONE');
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [externalMode, setExternalMode] = useState(false);
+  const [externalDb, setExternalDb] = useState({
+    host: '',
+    port: '',
+    username: '',
+    password: '',
+    dbName: ''
+  });
 
   const databaseTypes: DatabaseType[] = Object.values(DatabaseType) as DatabaseType[];
 
@@ -46,51 +56,45 @@ export default function CreateDatabaseModal({
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Error al crear la base de datos");
-      }
+      // 2. Si es modo externo, exportar e importar
+      if (importType === 'EXTERNAL') {
+        // Exportar de la DB externa
+        const exportResponse = await fetch("/api/databases/external-export", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dbType: formData.dbType,
+            ...externalDb
+          })
+        });
 
-      // 2. Si hay archivo, esperar a que el contenedor esté listo y luego importar
-      if (importMode && importFile) {
-        // Esperar a que el contenedor esté listo (polling)
-        let retries = 0;
-        const maxRetries = 10;
-        
-        while (retries < maxRetries) {
-          const statusResponse = await fetch(`/api/databases/${data.id}`);
-          const statusData = await statusResponse.json();
-          
-          if (statusData.status === 'RUNNING') {
-            // Contenedor listo, proceder con la importación
-            const formData = new FormData();
-            formData.append('file', importFile);
-            
-            const importResponse = await fetch(`/api/databases/${data.id}/import`, {
-              method: 'POST',
-              body: formData
-            });
+        if (!exportResponse.ok) throw new Error("Error exportando datos externos");
 
-            if (!importResponse.ok) {
-              const importError = await importResponse.json();
-              throw new Error(importError.error || "Error al importar datos");
-            }
-            break;
-          }
+        // Convertir la respuesta a FormData para importar
+        const blob = await exportResponse.blob();
+        const importFormData = new FormData();
+        importFormData.append('file', blob, `external-backup.${formData.dbType === 'POSTGRES' ? 'sql' : 'archive'}`);
 
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
-          retries++;
+        // Importar a la nueva DB
+        const importResponse = await fetch(`/api/databases/${data.id}/import`, {
+          method: 'POST',
+          body: importFormData
+        });
+
+        if (!importResponse.ok) {
+          const importError = await importResponse.json();
+          throw new Error(importError.error);
         }
-
-        if (retries >= maxRetries) {
-          throw new Error("Timeout esperando que la base de datos esté lista");
-        }
+      } else if (importType === 'FILE' && importFile) {
+        // Lógica de importación de archivo
       }
 
       onCreate();
       onClose();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Error al crear la base de datos");
+      alert(error instanceof Error ? error.message : "Error");
     } finally {
       setIsSubmitting(false);
     }
@@ -99,22 +103,17 @@ export default function CreateDatabaseModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Nueva Base de Datos</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Nueva Base de Datos</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
               Tipo de base de datos
             </label>
             <select
               value={formData.dbType}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  dbType: e.target.value as DatabaseType,
-                })
-              }
-              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              onChange={(e) => setFormData({...formData, dbType: e.target.value as DatabaseType})}
+              className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required
             >
               {databaseTypes.map((type) => (
@@ -126,28 +125,24 @@ export default function CreateDatabaseModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Nombre</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">Nombre</label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Subdominio</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">Subdominio</label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={formData.subdomain}
-                onChange={(e) =>
-                  setFormData({ ...formData, subdomain: e.target.value })
-                }
-                className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
+                className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 placeholder="mi-db"
                 required
               />
@@ -156,58 +151,75 @@ export default function CreateDatabaseModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Usuario</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">Usuario</label>
             <input
               type="text"
               value={formData.username}
-              onChange={(e) =>
-                setFormData({ ...formData, username: e.target.value })
-              }
-              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Contraseña</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">Contraseña</label>
             <input
               type="password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
               Nombre de la base de datos
             </label>
             <input
               type="text"
               value={formData.dbName}
-              onChange={(e) =>
-                setFormData({ ...formData, dbName: e.target.value })
-              }
-              className="w-full p-2 border rounded text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+              onChange={(e) => setFormData({ ...formData, dbName: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required
             />
           </div>
 
-          <div className="mb-4">
+          <div className="space-y-2 border border-gray-200 dark:border-gray-600 rounded p-4">
+            <h3 className="font-medium text-gray-700 dark:text-gray-100 mb-2">Tipo de importación</h3>
+            
             <label className="flex items-center gap-2">
               <input
-                type="checkbox"
-                checked={importMode}
-                onChange={(e) => setImportMode(e.target.checked)}
+                type="radio"
+                checked={importType === 'NONE'}
+                onChange={() => setImportType('NONE')}
+                name="importType"
               />
-              Importar datos existentes
+              <span className="text-gray-900 dark:text-gray-100">Base de datos nueva</span>
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={importType === 'FILE'}
+                onChange={() => setImportType('FILE')}
+                name="importType"
+              />
+              <span className="text-gray-900 dark:text-gray-100">Importar base de datos desde archivo</span>
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={importType === 'EXTERNAL'}
+                onChange={() => setImportType('EXTERNAL')}
+                name="importType"
+              />
+              <span className="text-gray-900 dark:text-gray-100">Importar base de datos externa</span>
             </label>
           </div>
 
-          {importMode && (
+          {importType === 'FILE' && (
             <div className="mb-4">
               <input
                 type="file"
@@ -215,12 +227,9 @@ export default function CreateDatabaseModal({
                 accept={(() => {
                   switch (formData.dbType) {
                     case 'POSTGRES':
-                    case 'MYSQL':
                       return '.sql';
                     case 'MONGODB':
-                      return '.archive,.json';  // Aceptar ambos formatos
-                    case 'REDIS':
-                      return '.rdb,.txt';
+                      return '.archive,.json';
                     default:
                       return '';
                   }
@@ -229,18 +238,94 @@ export default function CreateDatabaseModal({
             </div>
           )}
 
+          {importType === 'EXTERNAL' && (
+            <div className="space-y-4 border border-gray-200 dark:border-gray-600 rounded p-4">
+              <h3 className="font-medium text-gray-700 dark:text-gray-100 mb-2">Datos de conexión externa</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
+                  Host
+                </label>
+                <input
+                  type="text"
+                  placeholder="ejemplo.com"
+                  value={externalDb.host}
+                  onChange={(e) => setExternalDb({...externalDb, host: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required={importType === 'EXTERNAL'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
+                  Puerto
+                </label>
+                <input
+                  type="text"
+                  placeholder={formData.dbType === 'POSTGRES' ? '5432' : '27017'}
+                  value={externalDb.port}
+                  onChange={(e) => setExternalDb({...externalDb, port: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required={importType === 'EXTERNAL'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
+                  Usuario
+                </label>
+                <input
+                  type="text"
+                  placeholder="usuario"
+                  value={externalDb.username}
+                  onChange={(e) => setExternalDb({...externalDb, username: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required={importType === 'EXTERNAL'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={externalDb.password}
+                  onChange={(e) => setExternalDb({...externalDb, password: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required={importType === 'EXTERNAL'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
+                  Nombre de la base de datos
+                </label>
+                <input
+                  type="text"
+                  placeholder="nombre_db"
+                  value={externalDb.dbName}
+                  onChange={(e) => setExternalDb({...externalDb, dbName: e.target.value})}
+                  className="w-full p-2 border border-gray-300 rounded bg-white text-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  required={importType === 'EXTERNAL'}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
             >
               {isSubmitting ? "Creando..." : "Crear"}
             </button>

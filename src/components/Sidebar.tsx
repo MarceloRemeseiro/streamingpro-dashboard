@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LuLayoutDashboard, LuMonitor, LuLink, LuRadio, LuDatabase } from "react-icons/lu";
-import ThemeSwitcher from "./ThemeSwitcher";
+import ThemeToggle from "./ThemeToggle";
 
 const menuItems = [
   {
@@ -46,7 +46,7 @@ export default function Sidebar() {
     <nav className="w-64 border-r border-gray-200 dark:border-gray-800 p-4 fixed h-full bg-white dark:bg-gray-900">
       <div className="flex justify-between items-center mb-8">
         <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold">StreamingPro</div>
-        <ThemeSwitcher />
+        <ThemeToggle />
       </div>
 
       <div className="space-y-1">

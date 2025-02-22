@@ -54,9 +54,7 @@ enum DeviceType {
 
 enum DatabaseType {
   POSTGRES
-  MYSQL
   MONGODB
-  REDIS
 }
 
 enum InstanceStatus {
@@ -79,4 +77,10 @@ model DatabaseInstance {
   portMappings   Json
   environment    Json
   volumes        String?
+}
+
+model UserPreferences {
+  id        String   @id @default(uuid())
+  darkMode  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
 }

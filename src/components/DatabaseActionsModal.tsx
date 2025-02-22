@@ -75,7 +75,7 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
       const contentDisposition = response.headers.get('Content-Disposition');
       const filename = contentDisposition?.split('filename=')[1] || 
         `${database.name}-backup.${
-          database.dbType === 'POSTGRES' || database.dbType === 'MYSQL' ? 'sql' :
+          database.dbType === 'POSTGRES' ? 'sql' :
           database.dbType === 'MONGODB' ? 'archive' : 'rdb'
         }`;
 
@@ -142,7 +142,7 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
                 Eliminar
               </button>
 
-              {['POSTGRES', 'MYSQL', 'MONGODB', 'REDIS'].includes(database.dbType) && (
+              {['POSTGRES', 'MONGODB'].includes(database.dbType) && (
                 <button
                   onClick={handleExport}
                   disabled={isExporting || database.status !== 'RUNNING'}

@@ -56,41 +56,12 @@ export async function POST(
         command = `PGPASSWORD="${password}" psql -h ${containerName} -U ${username} -d ${dbName} < ${tempPath}`;
         break;
 
-      case 'MYSQL':
-        // Intentar hasta 5 veces con 2 segundos entre intentos
-        let attempts = 0;
-        while (attempts < 5) {
-          try {
-            // Primero intentar con autenticación nativa
-            command = `mariadb -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl --default-auth=mysql_native_password ${dbName} < ${tempPath}`;
-            await execAsync(command);
-            console.log('Import successful on attempt', attempts + 1);
-            break;
-          } catch (error) {
-            attempts++;
-            if (attempts === 5) {
-              // En el último intento, probar sin especificar el método de autenticación
-              command = `mariadb -h ${containerName} -P 3306 -u ${username} -p${password} --skip-ssl ${dbName} < ${tempPath}`;
-              await execAsync(command);
-              console.log('Import successful with fallback auth');
-              break;
-            }
-            console.log('Retrying import in 2 seconds... (attempt', attempts, 'of 5)');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-        }
-        break;
-
       case 'MONGODB':
         command = `mongorestore --host ${containerName} --username ${username} --password ${password} \
           --authenticationDatabase admin \
           --nsInclude="${dbName}.*" \
           --archive=${tempPath}`;
         result = await execAsync(command);
-        break;
-
-      case 'REDIS':
-        command = `cat ${tempPath} | redis-cli -h ${containerName} -a "${password}" --pipe`;
         break;
 
       default:

@@ -3,9 +3,7 @@ FROM node:18-alpine
 # Instalar clientes de bases de datos
 RUN apk add --no-cache \
     postgresql-client \
-    mariadb-client \
-    mongodb-tools \
-    redis
+    mongodb-tools
 
 WORKDIR /app
 
