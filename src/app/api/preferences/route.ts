@@ -12,6 +12,7 @@ export async function GET() {
     }
     return NextResponse.json(prefs);
   } catch (error) {
+    console.error('Error al obtener las preferencias:', error);
     return NextResponse.json(
       { error: 'Error getting preferences' },
       { status: 500 }
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(prefs);
   } catch (error) {
+    console.error('Error al actualizar las preferencias:', error);
     return NextResponse.json(
       { error: 'Error updating preferences' },
       { status: 500 }

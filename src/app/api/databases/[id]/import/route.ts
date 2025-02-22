@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { writeFile, readFile } from 'fs/promises';
+import { writeFile } from 'fs/promises';
 import { join } from 'path';
 
 const execAsync = promisify(exec);
@@ -17,9 +17,10 @@ async function checkConnection(containerName: string, username: string, password
     await execAsync(command);
     return true;
   } catch (error) {
+    console.error('Error al verificar la conexión:', error);
     return false;
   }
-}
+} 
 
 export async function POST(
   request: NextRequest,

@@ -130,12 +130,14 @@ export async function GET(
         status
       });
     } catch (error) {
+      console.error('Error al obtener el estado del contenedor:', error);
       return NextResponse.json({
         ...database,
         status: 'ERROR'
       });
     }
   } catch (error) {
+    console.error('Error al obtener el estado de la base de datos:', error);
     return NextResponse.json(
       { error: 'Error getting database status' },
       { status: 500 }

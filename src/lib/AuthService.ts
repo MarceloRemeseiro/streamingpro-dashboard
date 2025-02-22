@@ -1,9 +1,5 @@
 import { RESTREAMER_CREDENTIALS } from './constants';
 
-interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-}
 
 interface RequestBody {
   [key: string]: string | number | boolean | null | undefined;

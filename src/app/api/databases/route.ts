@@ -54,6 +54,7 @@ export async function GET() {
           
           return { ...db, status }
         } catch (error) {
+          console.error('Error al actualizar el estado de la base de datos:', error);
           return { ...db, status: 'ERROR' }
         }
       })
@@ -62,6 +63,7 @@ export async function GET() {
     return NextResponse.json(updatedDatabases)
     
   } catch (error) {
+    console.error('Error al obtener las bases de datos:', error);
     return NextResponse.json(
       { error: 'Error al obtener las bases de datos' },
       { status: 500 }
@@ -166,6 +168,7 @@ export async function POST(request: NextRequest) {
     try {
       await network.inspect()
     } catch (error) {
+      console.error('Error al obtener la red:', error instanceof Error ? error.message : 'Error desconocido')
       // Si la red no existe, crearla
       await docker.createNetwork({ Name: 'app-network' })
     }
@@ -363,6 +366,7 @@ const createContainer = async (
       }
     })
   } catch (error) {
+    console.error('Error al conectar al contenedor:', error instanceof Error ? error.message : 'Error desconocido')
     await container.stop()
     await container.remove()
     throw error

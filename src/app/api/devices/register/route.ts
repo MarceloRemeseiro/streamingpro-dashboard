@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       }
     })
 
+    console.log('Device registered:', device)                                 
     return NextResponse.json({
       clientServer: process.env.DEFAULT_CLIENT_SERVER || 'http://localhost:3001',
       checkInterval: 300

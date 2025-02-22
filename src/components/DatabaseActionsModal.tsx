@@ -15,6 +15,8 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
+  
+
   const handleToggleStatus = async () => {
     setIsLoading(true)
     try {
@@ -62,6 +64,7 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
   }
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
       const response = await fetch(`/api/databases/${database.id}/export`, {
         method: 'POST'
@@ -91,6 +94,8 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
     } catch (error) {
       console.error('Error:', error);
       alert(error instanceof Error ? error.message : 'Error al exportar');
+    } finally {
+      setIsExporting(false);
     }
   };
 
