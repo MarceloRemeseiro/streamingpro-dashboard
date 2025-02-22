@@ -112,6 +112,9 @@ export default function CreateDatabaseModal({
     }
   };
 
+  const domain = process.env.NEXT_PUBLIC_DATABASE_DOMAIN;
+
+  console.log(domain);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
@@ -158,7 +161,7 @@ export default function CreateDatabaseModal({
                 placeholder="mi-db"
                 required
               />
-              <span className="whitespace-nowrap text-gray-900 dark:text-gray-200">.streamingpro.marceloremeseiro.com</span>
+              <span className="whitespace-nowrap text-gray-900 dark:text-gray-200">.{domain}</span>
             </div>
           </div>
 
