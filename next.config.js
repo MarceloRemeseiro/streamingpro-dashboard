@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverActions: true,
+    serverActions: {
+      enabled: true
+    }
   },
   env: {
-    PORT: 1001
+    PORT: "1001"
   }
 }
 

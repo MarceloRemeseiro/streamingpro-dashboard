@@ -19,7 +19,8 @@ services:
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
-    command: sh -c "npm install && npm run build && npx prisma migrate deploy && npm run start"
+      - /app/node_modules
+    command: sh -c "npm install --production=false && npm run build && npx prisma migrate deploy && npm run start"
     depends_on:
       - nginx-proxy-manager
     networks:
