@@ -7,7 +7,7 @@ interface UrlModalProps {
   onSave: (data: Omit<StreamUrl, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
-const domain = process.env.NEXT_PUBLIC_DATABASE_DOMAIN;
+const domain = process.env.NEXT_PUBLIC_CENTRAL_SERVER;
 export function UrlModal({ url, onClose, onSave }: UrlModalProps) {
   const [formData, setFormData] = useState({
     name: url?.name || '',
