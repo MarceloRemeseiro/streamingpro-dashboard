@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    optimizePackageImports: [""],
+    serverActions: true,
   },
+  env: {
+    PORT: 1001
+  }
 }
 
 module.exports = nextConfig 

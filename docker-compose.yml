@@ -15,11 +15,11 @@ services:
       - NPM_API_KEY=3299djk23299djk23
       - DOCKER_SOCKET=/var/run/docker.sock
       - NPM_EMAIL=sincrosav@gmail.com
-      - NPM_PASSWORD=sincros2808
+      - PORT=1001
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
-    command: sh -c "npm install && npx prisma migrate deploy && npm run start"
+    command: sh -c "npm install && npm run build && npx prisma migrate deploy && npm run start"
     depends_on:
       - nginx-proxy-manager
     networks:
