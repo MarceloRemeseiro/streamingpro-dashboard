@@ -5,6 +5,7 @@ const nextConfig = {
       enabled: true
     }
   },
+  output: 'standalone',
   env: {
     PORT: "1001"
   },
@@ -25,7 +26,7 @@ const nextConfig = {
   typescript: {
     // Ignorar errores de TypeScript en producción
     ignoreBuildErrors: true,
-  },
+  }
 }
 
 module.exports = nextConfig 
