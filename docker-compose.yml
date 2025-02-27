@@ -1,7 +1,6 @@
 # Eliminar la línea de 'version' y asegurar la configuración de redes
 networks:
   app-network:
-    external: true
     name: app-network
 
 services:
@@ -16,16 +15,18 @@ services:
       - DOCKER_SOCKET=/var/run/docker.sock
       - NPM_EMAIL=sincrosav@gmail.com
       - PORT=1001
+      - NPM_API=http://nginx-proxy-manager:81/api
+      - NPM_PASSWORD=sincros2808
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
       - /app/node_modules
     command: sh -c "npm install --production=false && npm run build && npx prisma migrate deploy && npm run start"
     depends_on:
-      - nginx-proxy-manager
+      nginx-proxy-manager:
+        condition: service_healthy
     networks:
       - app-network
-      - default
 
   # Nginx Proxy Manager
   nginx-proxy-manager:
@@ -42,4 +43,10 @@ services:
       - ./data/letsencrypt:/etc/letsencrypt
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:81/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 

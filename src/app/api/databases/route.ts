@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       await docker.createNetwork({ Name: 'app-network' })
     }
 
-    const { container, volumeName } = await createContainer(dbType, username, password, dbName, subdomain)
+    const { container, volumeName, selectedPort } = await createContainer(dbType, username, password, dbName, subdomain)
     const containerInfo = await container.inspect() as ContainerInspectInfo
 
     // Primero definimos el puerto interno
@@ -222,14 +222,15 @@ export async function POST(request: NextRequest) {
     const newDatabase = await prisma.databaseInstance.create({
       data: {
         name,
-        dbType,
+        dbType: dbType as DatabaseType,
         subdomain,
         containerId: containerInfo.Id,
         connectionUrl,
-        status: 'RUNNING',
+        status: 'RUNNING' as const,
         portMappings: containerInfo.NetworkSettings.Ports,
         environment: { username, password, dbName },
-        volumes: volumeName
+        volumes: volumeName,
+        assignedPort: selectedPort
       }
     })
     
@@ -334,7 +335,41 @@ const createContainer = async (
     }
   })();
 
-  // Crear contenedor con volumen
+  // Buscar un puerto disponible
+  const existingContainers = await docker.listContainers({ all: true });
+  const usedPorts = new Set(
+    existingContainers.flatMap(container => {
+      const ports = container.Ports || [];
+      return ports.map(p => p.PublicPort);
+    })
+  );
+
+  // Rango de puertos para cada tipo de base de datos
+  const portRange = (() => {
+    switch (dbType) {
+      case DatabaseType.POSTGRES:
+        return { start: 55000, end: 55999 };
+      case DatabaseType.MONGODB:
+        return { start: 56000, end: 56999 };
+      default:
+        throw new Error('Tipo de base de datos no soportado');
+    }
+  })();
+
+  // Encontrar el primer puerto disponible en el rango
+  let selectedPort;
+  for (let p = portRange.start; p <= portRange.end; p++) {
+    if (!usedPorts.has(p)) {
+      selectedPort = p;
+      break;
+    }
+  }
+
+  if (!selectedPort) {
+    throw new Error('No hay puertos disponibles en el rango asignado');
+  }
+
+  // Crear contenedor con volumen y puerto fijo
   const container = await docker.createContainer({
     name: containerName,
     Image: imageName,
@@ -344,7 +379,7 @@ const createContainer = async (
     },
     HostConfig: {
       PortBindings: {
-        [port]: [{ HostPort: '0' }]
+        [port]: [{ HostPort: selectedPort.toString() }]
       },
       Binds: [`${volumeName}:${mountPoint}`]
     }
@@ -353,10 +388,8 @@ const createContainer = async (
   await container.start()
   
   // Obtener información actualizada después de iniciar
-  const containerInfo = await container.inspect() as ContainerInspectInfo
-  const hostPort = containerInfo.NetworkSettings.Ports[port][0].HostPort
-  console.log('Host port:', hostPort)
-  
+/*   const containerInfo = await container.inspect() as ContainerInspectInfo
+ */  
   // Conectar a la red
   try {
     const network = docker.getNetwork('app-network')
@@ -375,6 +408,7 @@ const createContainer = async (
   
   return {
     container,
-    volumeName
+    volumeName,
+    selectedPort
   };
 } 
