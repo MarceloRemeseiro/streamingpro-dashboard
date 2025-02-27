@@ -21,7 +21,14 @@ services:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
       - /app/node_modules
-    command: sh -c "npm install --production=false && npm run build && npx prisma migrate deploy && npm run start"
+    command: >
+      sh -c "
+        npm install --production=false &&
+        npx prisma generate &&
+        npx prisma migrate deploy &&
+        npm run build &&
+        npm run start
+      "
     depends_on:
       nginx-proxy-manager:
         condition: service_healthy
@@ -31,7 +38,7 @@ services:
   # Nginx Proxy Manager
   nginx-proxy-manager:
     image: 'jc21/nginx-proxy-manager:latest'
-    restart: always
+    restart: unless-stopped
     ports:
       - '80:80'
       - '443:443'
