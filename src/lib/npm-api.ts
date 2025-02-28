@@ -1,5 +1,5 @@
 // Configuración para conectar con el Nginx del servidor
-const NPM_API = process.env.NPM_API || 'http://localhost:81/api';
+const NPM_API = process.env.NPM_API || 'http://host.docker.internal:81/api';
 const NPM_EMAIL = process.env.NPM_EMAIL || '';
 const NPM_PASSWORD = process.env.NPM_PASSWORD || '';
 // NPM_API_KEY se usará en futuras implementaciones
@@ -15,26 +15,45 @@ export async function getToken() {
       email: NPM_EMAIL,
     });
 
-    const response = await fetch(`${NPM_API}/tokens`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        identity: NPM_EMAIL,
-        secret: NPM_PASSWORD
-      })
-    });
+    // Añadir manejo de errores y reintentos
+    let retries = 3;
+    let lastError;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Respuesta completa:', errorText);
-      throw new Error(`Error al obtener token: ${response.statusText}`);
+    while (retries > 0) {
+      try {
+        const response = await fetch(`${NPM_API}/tokens`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            identity: NPM_EMAIL,
+            secret: NPM_PASSWORD
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Respuesta completa:', errorText);
+          throw new Error(`Error al obtener token: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.token;
+      } catch (error) {
+        lastError = error;
+        console.error(`Intento ${4-retries}/3 fallido:`, error);
+        retries--;
+        if (retries > 0) {
+          console.log(`Reintentando en 2 segundos...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
     }
 
-    const data = await response.json();
-    return data.token;
+    console.error('Error al obtener token después de 3 intentos:', lastError);
+    return null;
   } catch (error) {
     console.error('Error al obtener token:', error);
     return null;

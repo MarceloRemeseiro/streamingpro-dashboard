@@ -14,7 +14,7 @@ services:
       - DOCKER_SOCKET=/var/run/docker.sock
       - PORT=1001
       # Configuración para usar el Nginx del servidor
-      - NPM_API=http://localhost:81/api
+      - NPM_API=http://host.docker.internal:81/api
       - NPM_API_KEY=3299djk23299djk23
       - NPM_EMAIL=sincrosav@gmail.com
       - NPM_PASSWORD=sincros2808
@@ -36,4 +36,6 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
