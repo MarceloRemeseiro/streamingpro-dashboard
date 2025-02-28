@@ -12,9 +12,6 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Crear directorio scripts
-RUN mkdir -p /app/scripts
-
 # Instalar dependencias
 RUN npm install
 
