@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 
 const execAsync = promisify(exec);
@@ -22,12 +22,123 @@ async function checkConnection(containerName: string, username: string, password
   }
 } 
 
+// Función para convertir SQL de MySQL a PostgreSQL
+async function convertMySQLToPostgreSQL(filePath: string): Promise<string> {
+  const content = await readFile(filePath, 'utf8');
+  
+  // Detectar si es un archivo MySQL (buscar sintaxis típica de MySQL)
+  const isMySQLFile = content.includes('`') || 
+                      content.includes('AUTO_INCREMENT') || 
+                      content.includes('UNLOCK TABLES') ||
+                      content.includes('ENGINE=');
+  
+  if (!isMySQLFile) {
+    return filePath; // Devolver el mismo archivo si no parece MySQL
+  }
+  
+  console.log('Detectado archivo MySQL, convirtiendo a formato PostgreSQL...');
+  
+  // Crear un nuevo archivo con la conversión
+  const newFilePath = `${filePath}.pg.sql`;
+  
+  // Procesar el dump línea por línea como en el script original
+  const lines = content.split('\n');
+  const tables = new Map<string, { create: string, inserts: string[] }>();
+  let currentTable: string | null = null;
+  let currentStatement: string[] = [];
+  let isInCreateTable = false;
+
+  // Procesar línea por línea
+  for (const line of lines) {
+    // Ignorar líneas de bloqueo y comentarios
+    if (line.includes('LOCK TABLES') || line.includes('UNLOCK TABLES') || line.startsWith('/*')) {
+      continue;
+    }
+
+    if (line.includes('CREATE TABLE')) {
+      const tableMatch = line.match(/CREATE TABLE [`"]([^`"]*)[`"]/);
+      if (tableMatch) {
+        currentTable = tableMatch[1];
+        isInCreateTable = true;
+        currentStatement = [line];
+        if (!tables.has(currentTable)) {
+          tables.set(currentTable, { create: '', inserts: [] });
+        }
+      }
+    } else if (line.includes('INSERT INTO')) {
+      if (currentTable) {
+        tables.get(currentTable)!.inserts.push(line);
+      }
+    } else if (isInCreateTable) {
+      if (line.includes(';')) {
+        isInCreateTable = false;
+        currentStatement.push(line);
+        tables.get(currentTable!)!.create = currentStatement.join('\n');
+      } else {
+        currentStatement.push(line);
+      }
+    }
+  }
+
+  // Generar el archivo PostgreSQL
+  let postgresDump = 'BEGIN;\n\n';
+
+  // Función para convertir una tabla
+  function convertTable(tableName: string, createStatement: string, insertStatements: string[]): string {
+    let result = `DROP TABLE IF EXISTS "${tableName}" CASCADE;\n`;
+    
+    // Convertir CREATE TABLE
+    result += createStatement
+      // Primero convertir los tipos de datos
+      .replace(/int\(\d+\) NOT NULL AUTO_INCREMENT/g, 'SERIAL')
+      .replace(/tinyint\(\d+\)/gi, 'BOOLEAN')
+      .replace(/int\(\d+\)/g, 'INTEGER')
+      .replace(/datetime\(\d+\)/g, 'TIMESTAMP')
+      .replace(/varchar\((\d+)\)/g, 'VARCHAR($1)')
+      .replace(/text/g, 'TEXT')
+      // Luego convertir los identificadores
+      .replace(/`([^`]*)`/g, '"$1"')
+      // Finalmente limpiar la sintaxis MySQL
+      .replace(/\) ENGINE=.*$/g, ');')
+      .replace(/DEFAULT NULL/g, 'DEFAULT NULL')
+      .replace(/PRIMARY KEY \(`([^`]*)`\)/g, 'PRIMARY KEY ("$1")');
+
+    // Añadir INSERTs si existen
+    if (insertStatements.length > 0) {
+      result += '\n' + insertStatements
+        .map((stmt: string) => stmt
+          .replace(/`([^`]*)`/g, '"$1"')
+          .replace(/,1,/g, ',true,')
+          .replace(/,0,/g, ',false,')
+          .replace(/\\''/g, "''")
+          .replace(/\\'/g, "''")
+        )
+        .join('\n');
+    }
+
+    return result + '\n\n';
+  }
+
+  // Procesar cada tabla
+  for (const [tableName, { create, inserts }] of tables.entries()) {
+    postgresDump += convertTable(tableName, create, inserts);
+  }
+
+  postgresDump += 'COMMIT;\n';
+  
+  await writeFile(newFilePath, postgresDump);
+  console.log(`Archivo convertido guardado en: ${newFilePath}`);
+  
+  return newFilePath;
+}
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
+    
     const database = await prisma.databaseInstance.findUnique({
       where: { id }
     });
@@ -71,10 +182,14 @@ export async function POST(
     }
 
     let command: string;
+    let importPath = tempPath;
 
     switch (database.dbType) {
       case 'POSTGRES':
-        command = `PGPASSWORD="${password}" psql -h ${containerName} -U ${username} -d ${dbName} < ${tempPath}`;
+        // Convertir el archivo si es necesario
+        importPath = await convertMySQLToPostgreSQL(tempPath);
+        
+        command = `PGPASSWORD="${password}" psql -h ${containerName} -U ${username} -d ${dbName} < ${importPath}`;
         console.log('Ejecutando comando de importación:', command);
         try {
           const result = await execAsync(command);
@@ -90,7 +205,7 @@ export async function POST(
         command = `mongorestore --host ${containerName} --username ${username} --password ${password} \
           --authenticationDatabase admin \
           --nsInclude="${dbName}.*" \
-          --archive=${tempPath}`;
+          --archive=${importPath}`;
         await execAsync(command);
         break;
 
@@ -98,8 +213,11 @@ export async function POST(
         throw new Error('Tipo de base de datos no soportado');
     }
 
-    // Limpiar archivo temporal
+    // Limpiar archivos temporales
     await execAsync(`rm ${tempPath}`);
+    if (importPath !== tempPath) {
+      await execAsync(`rm ${importPath}`);
+    }
 
     return NextResponse.json({ success: true });
 
