@@ -21,11 +21,8 @@ RUN npx prisma generate
 # Copiar el resto de archivos
 COPY . .
 
-# Construir la aplicación
-RUN npm run build
-
 # Exponer puerto
 EXPOSE 1001
 
-# Comando para iniciar la aplicación usando el servidor standalone
-CMD ["node", ".next/standalone/server.js"] 
+# Comando para iniciar la aplicación
+CMD ["npm", "run", "start"] 

@@ -1,16 +1,35 @@
-import { prisma } from '@/lib/prisma'
+'use client'
+
+import { useEffect, useState } from 'react'
 import DeviceTable from '@/components/DeviceTable'
 import type { DeviceWithConfig } from '@/lib/types'
 
-export default async function DevicesData() {
-  const devices = await prisma.device.findMany({
-    include: {
-      configs: {
-        orderBy: { updatedAt: 'desc' },
-        take: 1
+export default function DevicesData() {
+  const [devices, setDevices] = useState<DeviceWithConfig[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchDevices() {
+      try {
+        const response = await fetch('/api/devices')
+        if (!response.ok) {
+          throw new Error('Error al cargar dispositivos')
+        }
+        const data = await response.json()
+        setDevices(data)
+      } catch (error) {
+        console.error('Error cargando dispositivos:', error)
+      } finally {
+        setLoading(false)
       }
     }
-  }) as DeviceWithConfig[]
+
+    fetchDevices()
+  }, [])
+
+  if (loading) {
+    return <div className="text-center py-10">Cargando dispositivos...</div>
+  }
 
   return (
     <>

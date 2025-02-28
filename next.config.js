@@ -9,6 +9,11 @@ const nextConfig = {
   env: {
     PORT: "1001"
   },
+  // Deshabilitar la generación estática para la página /devices
+  // que está causando problemas con Prisma
+  generateStaticParams: {
+    '/devices': () => false
+  },
   webpack: (config) => {
     // Ignorar módulos problemáticos
     config.resolve.alias = {

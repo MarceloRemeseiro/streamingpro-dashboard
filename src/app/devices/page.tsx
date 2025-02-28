@@ -1,5 +1,8 @@
 import DevicesData from "@/components/DevicesData"
 
+// Marcar esta página como dinámica para evitar la generación estática
+export const dynamic = 'force-dynamic'
+
 export default function DevicesPage() {
   return (
     <div className="p-8">
