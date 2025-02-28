@@ -126,6 +126,13 @@ export function DatabaseActionsModal({ database, isOpen, onClose, onStatusChange
               </pre>
             </div>
 
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Puerto asignado:</h3>
+              <pre className="bg-gray-100 dark:bg-gray-900 p-2 rounded text-sm text-gray-900 dark:text-gray-100 overflow-auto">
+                {database.assignedPort}
+              </pre>
+            </div>
+
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleToggleStatus}

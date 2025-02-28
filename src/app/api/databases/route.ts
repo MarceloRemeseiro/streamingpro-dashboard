@@ -204,15 +204,15 @@ export async function POST(request: NextRequest) {
     console.log('Intentando crear proxy host para:', subdomain);
     await createProxyHost(proxyConfig);
 
-    // URL de conexión (sin puerto expuesto)
+    // URL de conexión (con puerto expuesto)
     const connectionUrl = (() => {
       const host = `${subdomain}.${DATABASE_DOMAIN}`
       
       switch (dbType) {
         case DatabaseType.POSTGRES:
-          return `postgres://${username}:${password}@${host}/${dbName}`;
+          return `postgres://${username}:${password}@${host}:${hostPort}/${dbName}`;
         case DatabaseType.MONGODB:
-          return `mongodb://${username}:${password}@${host}/${dbName}`
+          return `mongodb://${username}:${password}@${host}:${hostPort}/${dbName}`
         default:
           throw new Error('Tipo de base de datos no soportado')
       }

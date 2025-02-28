@@ -1,4 +1,8 @@
-import { NPM_API, NPM_EMAIL, NPM_PASSWORD } from '@/lib/constants'
+// Configuración para conectar con el Nginx del servidor
+const NPM_API = process.env.NPM_API || 'http://localhost:81/api';
+const NPM_EMAIL = process.env.NPM_EMAIL || '';
+const NPM_PASSWORD = process.env.NPM_PASSWORD || '';
+const NPM_API_KEY = process.env.NPM_API_KEY || '';
 
 export async function getToken() {
   if (!NPM_API || !NPM_EMAIL) {
