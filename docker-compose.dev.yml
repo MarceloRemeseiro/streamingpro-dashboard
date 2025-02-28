@@ -16,12 +16,14 @@ services:
       - DOCKER_SOCKET=/var/run/docker.sock
       - PORT=3000
       # Configuración para usar el Nginx del contenedor
-      - NPM_API=http://nginx-proxy-manager:81/api
+      - NPM_API=http://host.docker.internal:81/api
       - NPM_API_KEY=3299djk23299djk23
       - NPM_EMAIL=sincrosav@gmail.com
       - NPM_PASSWORD=sincros2808
       - DATABASE_URL=file:./prisma/dev.db
-      - NEXT_PUBLIC_DATABASE_DOMAIN=localhost
+      - NEXT_PUBLIC_DATABASE_DOMAIN=marceloremeseiro.com
+      - NEXT_PUBLIC_CENTRAL_SERVER=localhost
+      - DEFAULT_CLIENT_SERVER=http://localhost:3001
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
@@ -35,12 +37,15 @@ services:
         npx prisma migrate dev &&
         echo 'Esperando a que nginx-proxy-manager esté listo...' &&
         sleep 15 &&
+        echo '🔍 Verificando variables de entorno antes de iniciar...' &&
         npm run dev
       "
     networks:
       - app-network
     depends_on:
       - nginx-proxy-manager
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # Nginx Proxy Manager para desarrollo
   nginx-proxy-manager:

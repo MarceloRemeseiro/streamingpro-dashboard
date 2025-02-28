@@ -19,6 +19,9 @@ services:
       - NPM_EMAIL=sincrosav@gmail.com
       - NPM_PASSWORD=sincros2808
       - DATABASE_URL=file:./prisma/dev.db
+      - NEXT_PUBLIC_DATABASE_DOMAIN=marceloremeseiro.com
+      - NEXT_PUBLIC_CENTRAL_SERVER=streamingpro.es
+      - DEFAULT_CLIENT_SERVER=http://localhost:3001
     volumes:
       - .:/app
       - /var/run/docker.sock:/var/run/docker.sock
@@ -31,6 +34,7 @@ services:
         npx prisma generate &&
         npx prisma migrate deploy &&
         npm run build &&
+        echo '🔍 Verificando variables de entorno antes de iniciar...' &&
         npm run start
       "
     networks:

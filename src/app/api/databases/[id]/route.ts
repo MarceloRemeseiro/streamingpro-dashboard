@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import docker from '@/lib/docker'
 import { deleteProxyHost } from '@/lib/npm-api'
 
-const DATABASE_DOMAIN = process.env.NEXT_PUBLIC_DATABASE_DOMAIN || 'localhost'
+const DATABASE_DOMAIN = process.env.NEXT_PUBLIC_DATABASE_DOMAIN
 
 export async function DELETE(
   request: NextRequest,
