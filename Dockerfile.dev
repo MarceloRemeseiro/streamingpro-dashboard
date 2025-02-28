@@ -8,6 +8,9 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
+# Crear directorio scripts
+RUN mkdir -p /app/scripts
+
 # No copiamos archivos para aprovechar el volumen montado
 
 # Exponer puerto de desarrollo

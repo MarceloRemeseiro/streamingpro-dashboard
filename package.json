@@ -8,7 +8,7 @@
     "dev:docker:build": "docker-compose -f docker-compose.dev.yml up --build",
     "dev:docker:down": "docker-compose -f docker-compose.dev.yml down",
     "build": "next build",
-    "start": "node scripts/check-env.js && next start",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {

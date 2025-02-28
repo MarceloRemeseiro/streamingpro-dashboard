@@ -38,7 +38,108 @@ services:
         echo 'Esperando a que nginx-proxy-manager esté listo...' &&
         sleep 15 &&
         echo '🔍 Verificando variables de entorno antes de iniciar...' &&
-        npm run dev
+        mkdir -p /app/scripts &&
+        echo '#!/usr/bin/env node
+
+        /**
+         * Script para verificar las variables de entorno necesarias
+         * Este script se ejecuta antes de iniciar la aplicación
+         */
+
+        // Lista de variables de entorno requeridas
+        const requiredEnvVars = [
+          \"NODE_ENV\",
+          \"PORT\",
+          \"NPM_API\",
+          \"NPM_EMAIL\",
+          \"NPM_PASSWORD\",
+          \"DATABASE_URL\",
+          \"DOCKER_SOCKET\",
+          \"NEXT_PUBLIC_DATABASE_DOMAIN\",
+          \"NEXT_PUBLIC_CENTRAL_SERVER\",
+          \"DEFAULT_CLIENT_SERVER\"
+        ];
+
+        // Opcional pero recomendado
+        const optionalEnvVars = [
+          \"NPM_API_KEY\"
+        ];
+
+        console.log(\"\n🔍 Verificando variables de entorno...\n\");
+
+        // Verificar variables requeridas
+        const missingVars = [];
+        for (const envVar of requiredEnvVars) {
+          if (!process.env[envVar]) {
+            missingVars.push(envVar);
+          } else {
+            console.log(`✅ ${envVar}: ${maskValue(envVar, process.env[envVar])}`);
+          }
+        }
+
+        // Verificar variables opcionales
+        for (const envVar of optionalEnvVars) {
+          if (!process.env[envVar]) {
+            console.log(`⚠️ ${envVar}: No definido (opcional)`);
+          } else {
+            console.log(`✅ ${envVar}: ${maskValue(envVar, process.env[envVar])}`);
+          }
+        }
+
+        // Verificar NPM_API específicamente
+        if (process.env.NPM_API) {
+          console.log(`\n🔗 Conexión NPM configurada: ${process.env.NPM_API}`);
+          
+          // Verificar si estamos usando host.docker.internal
+          if (process.env.NPM_API.includes(\"host.docker.internal\")) {
+            console.log(\"ℹ️ Usando host.docker.internal para conectar con el host\");
+            
+            // Verificar si tenemos extra_hosts configurado (no podemos verificarlo aquí, solo informativo)
+            console.log(\"⚠️ Asegúrate de que extra_hosts esté configurado en docker-compose.yml\");
+          }
+        }
+
+        // Verificar DATABASE_URL específicamente
+        if (process.env.DATABASE_URL) {
+          console.log(`\n💾 Base de datos configurada: ${maskValue(\"DATABASE_URL\", process.env.DATABASE_URL)}`);
+        }
+
+        // Mostrar errores si hay variables faltantes
+        if (missingVars.length > 0) {
+          console.error(\"\n❌ Error: Faltan las siguientes variables de entorno requeridas:\");
+          missingVars.forEach(v => console.error(`   - ${v}`));
+          console.error(\"\nPor favor, configura estas variables en tu archivo .env o en tu entorno.\");
+          process.exit(1);
+        } else {
+          console.log(\"\n✅ Todas las variables de entorno requeridas están configuradas correctamente.\");
+        }
+
+        // Función para enmascarar valores sensibles
+        function maskValue(name, value) {
+          // Enmascarar contraseñas y tokens
+          if (name.includes(\"PASSWORD\") || name.includes(\"KEY\") || name.includes(\"SECRET\") || name.includes(\"TOKEN\")) {
+            return value.substring(0, 3) + \"****\" + value.substring(value.length - 3);
+          }
+          
+          // Enmascarar URLs de base de datos
+          if (name === \"DATABASE_URL\" && value.includes(\"://\")) {
+            const parts = value.split(\"://\");
+            const protocol = parts[0];
+            const rest = parts[1];
+            
+            if (rest.includes(\"@\")) {
+              const [auth, endpoint] = rest.split(\"@\");
+              return `${protocol}://${auth.substring(0, 3)}****@${endpoint}`;
+            }
+          }
+          
+          return value;
+        }
+
+        console.log(\"\n🚀 Iniciando aplicación...\n\");' > /app/scripts/check-env.js &&
+        chmod +x /app/scripts/check-env.js &&
+        node /app/scripts/check-env.js &&
+        next dev --turbopack
       "
     networks:
       - app-network
