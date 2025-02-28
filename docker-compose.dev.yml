@@ -37,7 +37,7 @@ services:
         npx prisma migrate dev &&
         echo 'Esperando a que nginx-proxy-manager esté listo...' &&
         sleep 15 &&
-        next dev --turbopack
+        npm run dev
       "
     networks:
       - app-network
